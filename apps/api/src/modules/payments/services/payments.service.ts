@@ -1,5 +1,7 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { AppError } from '../../../core/errors.js';
+import { env } from '../../../config/env.js';
+import { logger } from '../../../config/logger.js';
 import { UserRepository } from '../../auth/repositories/user.repository.js';
 import { MonetizationConfigRepository } from '../repositories/monetization-config.repository.js';
 import { PaymentRepository } from '../repositories/payment.repository.js';
@@ -151,13 +153,15 @@ export class PaymentsService {
       throw new AppError('INVALID_WEBHOOK_PAYLOAD', 400, 'Invalid webhook payload');
     }
 
-    if (signatureHeader && !this.validateWebhookSignature(signatureHeader)) {
+    if (!this.validateWebhookSignature(signatureHeader)) {
+      logger.warn({ topic, externalId }, 'Rejected Mercado Pago webhook due to invalid signature');
       throw new AppError('INVALID_WEBHOOK_SIGNATURE', 400, 'Invalid webhook signature');
     }
 
     const eventKey = `${topic}:${externalId}`;
     const shouldProcess = await this.webhookEventRepository.registerIfFirst('mercadopago', eventKey, topic, payload);
     if (!shouldProcess) {
+      logger.info({ topic, externalId }, 'Skipped duplicate Mercado Pago webhook event');
       return { ignored: true, reason: 'already_processed' as const };
     }
 
@@ -203,11 +207,34 @@ export class PaymentsService {
     return this.subscriptionRepository.list();
   }
 
-  private validateWebhookSignature(signatureHeader: string): boolean {
-    if (!process.env.MERCADOPAGO_WEBHOOK_SECRET) {
+  private validateWebhookSignature(signatureHeader?: string): boolean {
+    const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET ?? env.MERCADOPAGO_WEBHOOK_SECRET;
+    if (!webhookSecret) {
       return true;
     }
 
-    return signatureHeader.includes(process.env.MERCADOPAGO_WEBHOOK_SECRET);
+    if (!signatureHeader) {
+      return false;
+    }
+
+    const possibleValues = signatureHeader
+      .split(',')
+      .map((segment) => segment.trim())
+      .flatMap((segment) => {
+        const [key = '', ...rest] = segment.split('=');
+        if (!rest.length) return [segment];
+        const value = rest.join('=').trim();
+        return key.trim().toLowerCase() === 'v1' ? [value] : [value, segment];
+      })
+      .filter((value) => value.length > 0);
+
+    return possibleValues.some((value) => {
+      const expected = Buffer.from(webhookSecret);
+      const candidate = Buffer.from(value);
+      if (expected.length !== candidate.length) {
+        return false;
+      }
+      return timingSafeEqual(expected, candidate);
+    });
   }
 }

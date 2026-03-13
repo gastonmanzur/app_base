@@ -1,29 +1,59 @@
-# Stage 1 - Architecture Baseline
+# Arquitectura del starter
 
-## Monorepo principles
-- Clear split between apps and reusable packages.
-- Strict TypeScript baseline across all workspaces.
-- Business features isolated by modules in `apps/api/src/modules` and `apps/web/src/features`.
-- Shared contracts in `packages/shared-types` to reduce drift frontend/backend.
+## Principios
 
-## API layering
-- `core`: cross-cutting concerns (errors, http response shape).
-- `config`: env parsing and app config.
-- `modules/*`: feature modules with route/controller/service separation.
+- Monorepo por workspaces npm.
+- TypeScript estricto en apps y packages.
+- Separación por capas en backend (routes/controllers/services/repositories/models).
+- Frontend orientado a features y route guards.
+- Contratos compartidos para reducir drift frontend/backend.
 
-## Web layering
-- `app`: app shell, routing setup.
-- `features/*`: feature scoped UI + logic.
-- `i18n`: localization bootstrap and dictionaries.
+## Backend (`apps/api`)
 
-## Reusable packages
-- `shared-types`: API contracts and domain primitives.
-- `shared-utils`: formatting, validators, helper functions.
-- `ui`: reusable design-system-ready components.
+### Capas
 
-## Stage 2 additions (auth)
-- Auth module added under `apps/api/src/modules/auth` with controller/service/repository split.
-- Refresh token strategy: opaque token in httpOnly cookie, hashed in DB sessions, rotation on refresh.
-- Email actions (`verify_email`, `reset_password`) persisted as hashed action tokens with expiry/consumption.
-- Role authorization via `requireAuth` + `requireRoles` middleware.
-- Web auth flows implemented in `apps/web/src/features/auth` with route guards and i18n-ready texts.
+- `config`: parsing y validación de entorno + logger.
+- `core`: errores, middlewares transversales, rate limiting, respuesta API.
+- `modules/*`: dominio por feature:
+  - `auth`: local auth, Google login, refresh sessions, verify/reset password, roles.
+  - `avatar`: upload/replace/delete de imagen con validación y normalización.
+  - `push`: registro de dispositivos, envío admin, provider adapter noop/FCM.
+  - `payments`: checkout one-time/subscription y webhook idempotente.
+  - `admin`: endpoints agregados para dashboard/pagos/notificaciones.
+  - `health`: healthcheck.
+
+### Seguridad base
+
+- Helmet + CORS con origen explícito.
+- Cookies refresh token `httpOnly` y `sameSite=strict`.
+- Guards por JWT y roles.
+- Rate limiting en rutas sensibles (auth, push, webhook).
+- Validación Zod para payloads críticos.
+
+## Frontend (`apps/web`)
+
+### Organización
+
+- `app`: shell y routing.
+- `features/auth`: contexto de sesión, guards y páginas auth.
+- `features/admin`: panel admin y consumo de módulos críticos.
+- `features/notifications`: permisos web push, registro de token, envío admin.
+- `features/payments`: checkout y estado de monetización.
+
+### Flujo auth UI
+
+- `AuthProvider` intenta refresh al iniciar.
+- `ProtectedRoute` exige sesión y opcionalmente roles.
+- Al expirar sesión, el frontend redirige a login.
+
+## Contratos y utilidades
+
+- `packages/shared-types`: DTOs y tipos de dominio usados por API/Web.
+- `packages/shared-utils`: helpers puros reutilizables.
+- `packages/ui`: componentes UI compartibles.
+
+## Observabilidad
+
+- `pino` + `pino-http` para logs estructurados.
+- trazas relevantes para webhooks duplicados/firmas inválidas.
+- errores normalizados por `errorMiddleware`.

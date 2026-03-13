@@ -52,7 +52,8 @@ export class PaymentsController {
   };
 
   getOrderStatus = async (req: AuthenticatedRequest, res: Response<ApiResponse<unknown>>): Promise<void> => {
-    const orderId = Array.isArray(req.params.orderId) ? req.params.orderId[0] : req.params.orderId;
+    const orderIdRaw = Array.isArray(req.params.orderId) ? req.params.orderId[0] : req.params.orderId;
+    const orderId = z.string().min(1).parse(orderIdRaw);
     const result = await this.service.getOrderStatus(orderId, { userId: req.auth!.userId, role: req.auth!.role });
     res.status(200).json({ success: true, data: result });
   };

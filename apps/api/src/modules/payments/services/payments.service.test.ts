@@ -90,7 +90,41 @@ describe('PaymentsService', () => {
     expect(second).toEqual({ ignored: true, reason: 'already_processed' });
   });
 
-  it('propagates provider errors', async () => {
+  
+  it('rejects webhook when signature is missing and secret is configured', async () => {
+    process.env.MERCADOPAGO_WEBHOOK_SECRET = 'whsec_test';
+    const service = new PaymentsService({} as never, {} as never, {} as never, {} as never, {} as never, {} as never);
+
+    await expect(service.processWebhook({ topic: 'payment', data: { id: '123' } })).rejects.toBeInstanceOf(AppError);
+  });
+
+  it('accepts webhook signature using v1 format', async () => {
+    process.env.MERCADOPAGO_WEBHOOK_SECRET = 'whsec_test';
+    const service = new PaymentsService(
+      {} as never,
+      {} as never,
+      {
+        getOrderByExternalReference: vi.fn().mockResolvedValue({ _id: 'ord1' }),
+        updateOrderStatus: vi.fn(),
+        upsertTransaction: vi.fn()
+      } as never,
+      {} as never,
+      { registerIfFirst: vi.fn().mockResolvedValue(true) } as never,
+      {
+        getPaymentStatus: vi.fn().mockResolvedValue({
+          providerPaymentId: '123',
+          externalReference: 'ref',
+          status: 'approved',
+          amount: 10,
+          currency: 'ARS'
+        })
+      } as never
+    );
+
+    const result = await service.processWebhook({ topic: 'payment', data: { id: '123' } }, 'ts=1,v1=whsec_test');
+    expect(result).toEqual({ processed: true, topic: 'payment' });
+  });
+it('propagates provider errors', async () => {
     const service = new PaymentsService(
       { getConfig: vi.fn().mockResolvedValue({ monetizationMode: 'both', subscriptionPeriodMode: 'both' }) } as never,
       { findById: vi.fn().mockResolvedValue({ _id: 'u1', email: 'user@test.com' }) } as never,
