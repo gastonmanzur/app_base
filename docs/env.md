@@ -1,57 +1,68 @@
-# Environment variables
+# Guía de variables de entorno
 
 ## API (`apps/api/.env`)
-- `NODE_ENV=development`
+
+### Core
+- `NODE_ENV=development|test|production`
 - `PORT=4000`
 - `MONGO_URI=mongodb://localhost:27017/starter`
 - `CORS_ORIGIN=http://localhost:5173`
+- `APP_BASE_URL=http://localhost:4000`
+- `WEB_BASE_URL=http://localhost:5173`
+
+### Auth
 - `JWT_ACCESS_SECRET=<min 32 chars>`
 - `JWT_REFRESH_SECRET=<min 32 chars>`
 - `JWT_ACCESS_EXPIRES_IN=15m`
 - `JWT_REFRESH_EXPIRES_IN=7d`
 - `EMAIL_TOKEN_EXPIRES_IN_MINUTES=60`
 - `RESET_TOKEN_EXPIRES_IN_MINUTES=30`
-- `APP_BASE_URL=http://localhost:4000`
-- `WEB_BASE_URL=http://localhost:5173`
-- `AVATAR_STORAGE_DIR=storage/avatars` (filesystem path used by the local avatar storage provider)
-- `AVATAR_PUBLIC_BASE_PATH=/media/avatars` (public mounted path for avatar visualization)
-- `AVATAR_MAX_SIZE_BYTES=2097152` (2MB max upload size)
-- `GOOGLE_CLIENT_ID=<google oauth web client id>`
-- `SMTP_HOST=<smtp host, optional in dev>`
+- `GOOGLE_CLIENT_ID=<google oauth client id>`
+
+### Avatar
+- `AVATAR_STORAGE_DIR=storage/avatars`
+- `AVATAR_PUBLIC_BASE_PATH=/media/avatars`
+- `AVATAR_MAX_SIZE_BYTES=2097152`
+
+### Email
+- `SMTP_HOST=<optional>`
 - `SMTP_PORT=587`
-- `SMTP_USER=<smtp user>`
-- `SMTP_PASS=<smtp password>`
+- `SMTP_USER=<optional>`
+- `SMTP_PASS=<optional>`
 - `SMTP_FROM=no-reply@example.com`
 
-> If `SMTP_HOST` is empty, the API uses Nodemailer `jsonTransport` and logs mail payloads for development.
+> Si `SMTP_HOST` no está definido, se usa `jsonTransport` para desarrollo local.
+
+### Push (FCM)
+- `PUSH_PROVIDER=noop|fcm`
+- `FCM_PROJECT_ID=<required if PUSH_PROVIDER=fcm>`
+- `FCM_CLIENT_EMAIL=<required if PUSH_PROVIDER=fcm>`
+- `FCM_PRIVATE_KEY=<required if PUSH_PROVIDER=fcm>`
+
+### Payments (Mercado Pago)
+- `MONETIZATION_MODE=one_time_only|subscriptions_only|both`
+- `SUBSCRIPTION_PERIOD_MODE=monthly|yearly|both`
+- `MERCADOPAGO_ACCESS_TOKEN=<private token>`
+- `MERCADOPAGO_WEBHOOK_SECRET=<required in production>`
+- `MERCADOPAGO_API_BASE_URL=https://api.mercadopago.com`
+- `MERCADOPAGO_CHECKOUT_SUCCESS_URL=<optional>`
+- `MERCADOPAGO_CHECKOUT_FAILURE_URL=<optional>`
+- `MERCADOPAGO_CHECKOUT_PENDING_URL=<optional>`
+- `MERCADOPAGO_STATEMENT_DESCRIPTOR=<max 16 chars>`
+
+### Rate limiting
+- `AUTH_RATE_LIMIT_WINDOW_MS=60000`
+- `AUTH_RATE_LIMIT_MAX=20`
+- `WEBHOOK_RATE_LIMIT_WINDOW_MS=60000`
+- `WEBHOOK_RATE_LIMIT_MAX=60`
+- `PUSH_RATE_LIMIT_WINDOW_MS=60000`
+- `PUSH_RATE_LIMIT_MAX=40`
 
 ## Web (`apps/web/.env`)
 - `VITE_API_URL=http://localhost:4000/api`
-
-## Avatar local storage layout (development)
-- Root directory: `${AVATAR_STORAGE_DIR}`
-- Each uploaded avatar is stored as a generated immutable key: `<timestamp>-<uuid>.webp`
-- Public URL format: `${APP_BASE_URL}${AVATAR_PUBLIC_BASE_PATH}/{key}`
-
-- `PUSH_PROVIDER=noop` (`noop` for local/dev, `fcm` for Firebase Cloud Messaging)
-- `FCM_PROJECT_ID=<firebase project id>`
-- `FCM_CLIENT_EMAIL=<service account client email>`
-- `FCM_PRIVATE_KEY=<service account private key with \n escaped as \n>`
-
-- `VITE_FIREBASE_API_KEY=<firebase web app api key>`
-- `VITE_FIREBASE_AUTH_DOMAIN=<firebase auth domain>`
-- `VITE_FIREBASE_PROJECT_ID=<firebase project id>`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID=<firebase messaging sender id>`
-- `VITE_FIREBASE_APP_ID=<firebase web app id>`
-- `VITE_FIREBASE_WEB_PUSH_VAPID_KEY=<firebase web push vapid key>`
-
-## Mercado Pago monetization (`apps/api/.env`)
-- `MONETIZATION_MODE=one_time_only|subscriptions_only|both` (habilita modalidades de monetización)
-- `SUBSCRIPTION_PERIOD_MODE=monthly|yearly|both` (define periodicidades permitidas)
-- `MERCADOPAGO_ACCESS_TOKEN=<private token>` (credencial privada para API Mercado Pago)
-- `MERCADOPAGO_WEBHOOK_SECRET=<optional shared secret>` (validación básica de webhook)
-- `MERCADOPAGO_API_BASE_URL=https://api.mercadopago.com` (endpoint base)
-- `MERCADOPAGO_CHECKOUT_SUCCESS_URL=<frontend return URL>`
-- `MERCADOPAGO_CHECKOUT_FAILURE_URL=<frontend return URL>`
-- `MERCADOPAGO_CHECKOUT_PENDING_URL=<frontend return URL>`
-- `MERCADOPAGO_STATEMENT_DESCRIPTOR=<max 16 chars shown in card statement>`
+- `VITE_FIREBASE_API_KEY=<optional if no push>`
+- `VITE_FIREBASE_AUTH_DOMAIN=<optional if no push>`
+- `VITE_FIREBASE_PROJECT_ID=<optional if no push>`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID=<optional if no push>`
+- `VITE_FIREBASE_APP_ID=<optional if no push>`
+- `VITE_FIREBASE_WEB_PUSH_VAPID_KEY=<optional if no push>`

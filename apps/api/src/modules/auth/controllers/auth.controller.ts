@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { env } from '../../../config/env.js';
 import { z } from 'zod';
 import { AuthService } from '../services/auth.service.js';
 import type { AuthenticatedRequest } from '../types/auth-request.js';
@@ -15,7 +16,14 @@ const changePasswordSchema = z.object({
 
 const authService = new AuthService();
 
+
 const refreshCookieName = 'refreshToken';
+const refreshCookieOptions = {
+  httpOnly: true,
+  sameSite: 'strict' as const,
+  secure: env.NODE_ENV === 'production',
+  path: '/api/auth'
+};
 
 export const authController = {
   register: async (req: Request, res: Response): Promise<void> => {
@@ -33,34 +41,34 @@ export const authController = {
   login: async (req: Request, res: Response): Promise<void> => {
     const data = loginSchema.parse(req.body);
     const session = await authService.loginLocal(data.email, data.password);
-    res.cookie(refreshCookieName, session.refreshToken, { httpOnly: true, sameSite: 'strict', secure: false });
+    res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions)
     res.status(200).json({ success: true, data: { accessToken: session.accessToken, user: session.user } });
   },
 
   loginWithGoogle: async (req: Request, res: Response): Promise<void> => {
     const data = googleSchema.parse(req.body);
     const session = await authService.loginWithGoogle(data.idToken);
-    res.cookie(refreshCookieName, session.refreshToken, { httpOnly: true, sameSite: 'strict', secure: false });
+    res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions)
     res.status(200).json({ success: true, data: { accessToken: session.accessToken, user: session.user } });
   },
 
   refresh: async (req: Request, res: Response): Promise<void> => {
     const refreshToken = z.string().min(10).parse(req.cookies[refreshCookieName]);
     const session = await authService.refreshSession(refreshToken);
-    res.cookie(refreshCookieName, session.refreshToken, { httpOnly: true, sameSite: 'strict', secure: false });
+    res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions)
     res.status(200).json({ success: true, data: { accessToken: session.accessToken, user: session.user } });
   },
 
   logout: async (req: Request, res: Response): Promise<void> => {
     const refreshToken = z.string().min(10).parse(req.cookies[refreshCookieName]);
     await authService.logout(refreshToken);
-    res.clearCookie(refreshCookieName);
+    res.clearCookie(refreshCookieName, refreshCookieOptions);
     res.status(200).json({ success: true, data: { message: 'Logged out' } });
   },
 
   logoutAll: async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     await authService.logoutAll(req.auth!.userId);
-    res.clearCookie(refreshCookieName);
+    res.clearCookie(refreshCookieName, refreshCookieOptions);
     res.status(200).json({ success: true, data: { message: 'Logged out from all devices' } });
   },
 

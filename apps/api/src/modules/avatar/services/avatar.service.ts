@@ -4,7 +4,7 @@ import sharp from 'sharp';
 import { AppError } from '../../../core/errors.js';
 import { env } from '../../../config/env.js';
 import { UserRepository } from '../../auth/repositories/user.repository.js';
-import type { FileStorageProvider } from '../storage/storage-provider.js';
+import type { FileStorageProvider } from '../file-storage/storage-provider.js';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 const AVATAR_SIZE = 256;

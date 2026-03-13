@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AuthService } from './services/auth.service.js';
-import { AppError } from '../../core/errors.js';
 
 const baseUser = {
   _id: { toString: () => 'u1' },
@@ -53,5 +52,49 @@ describe('AuthService', () => {
     );
 
     await expect(service.forgotPassword('unknown@example.com')).resolves.toBeUndefined();
+  });
+
+  it('rejects google login when local account already exists', async () => {
+    const service = new AuthService(
+      { findByEmail: vi.fn().mockResolvedValue(baseUser) } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { verifyIdToken: vi.fn().mockResolvedValue({ email: 'john@example.com', googleId: 'gid-1', emailVerified: true }) } as never
+    );
+
+    await expect(service.loginWithGoogle('id-token')).rejects.toMatchObject({ code: 'PROVIDER_CONFLICT' });
+  });
+
+  it('rotates refresh token on refresh session', async () => {
+    const sessions = {
+      findActiveByHash: vi.fn().mockResolvedValue({ userId: { toString: () => 'u1' } }),
+      revokeByHash: vi.fn(),
+      create: vi.fn()
+    };
+
+    const users = {
+      findById: vi.fn().mockResolvedValue(baseUser),
+      updateLastLogin: vi.fn()
+    };
+
+    const service = new AuthService(users as never, sessions as never, {} as never, undefined, {} as never, {} as never);
+
+    const result = await service.refreshSession('refresh-token-1234567890');
+
+    expect(result.accessToken).toBeTypeOf('string');
+    expect(result.refreshToken).toBeTypeOf('string');
+    expect(sessions.revokeByHash).toHaveBeenCalledTimes(1);
+    expect(sessions.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('revokes all sessions on logoutAll', async () => {
+    const sessions = {
+      revokeAllByUserId: vi.fn()
+    };
+    const service = new AuthService({} as never, sessions as never, {} as never, {} as never, {} as never, {} as never);
+    await service.logoutAll('u1');
+    expect(sessions.revokeAllByUserId).toHaveBeenCalledWith('u1');
   });
 });
