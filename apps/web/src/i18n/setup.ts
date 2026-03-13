@@ -15,22 +15,11 @@ void i18n.use(initReactI18next).init({
         auth: {
           common: { goLogin: 'Ir a login' },
           register: { title: 'Registro', submit: 'Crear cuenta', success: 'Registro exitoso, revisa tu email.' },
-          login: {
-            title: 'Login',
-            submit: 'Ingresar',
-            google: 'Entrar con Google',
-            forgot: '¿Olvidaste tu contraseña?'
-          },
+          login: { title: 'Login', submit: 'Ingresar', google: 'Entrar con Google', forgot: '¿Olvidaste tu contraseña?' },
           verify: { title: 'Verificar email', submit: 'Verificar', success: 'Email verificado correctamente' },
           forgot: { title: 'Recuperar contraseña', submit: 'Enviar email', success: 'Si existe la cuenta, enviamos un email.' },
           reset: { title: 'Resetear contraseña', submit: 'Guardar nueva contraseña', success: 'Contraseña actualizada' },
-          change: {
-            title: 'Cambiar contraseña',
-            current: 'Contraseña actual',
-            new: 'Nueva contraseña',
-            submit: 'Actualizar',
-            success: 'Contraseña cambiada'
-          }
+          change: { title: 'Cambiar contraseña', current: 'Contraseña actual', new: 'Nueva contraseña', submit: 'Actualizar', success: 'Contraseña cambiada' }
         },
         payments: {
           title: 'Monetización',
@@ -47,26 +36,23 @@ void i18n.use(initReactI18next).init({
           role: 'Rol: {{role}}',
           changePassword: 'Cambiar contraseña',
           avatar: {
-            title: 'Avatar',
-            alt: 'Avatar de usuario',
-            empty: 'Todavía no tienes avatar.',
-            delete: 'Eliminar avatar',
-            uploadSuccess: 'Avatar actualizado correctamente',
-            deleteSuccess: 'Avatar eliminado',
-            invalidType: 'Selecciona una imagen válida (png, jpg o webp).',
-            invalidSize: 'El archivo excede el tamaño máximo permitido (2 MB).',
-            unexpectedError: 'No se pudo procesar el avatar.'
+            title: 'Avatar', alt: 'Avatar de usuario', empty: 'Todavía no tienes avatar.', delete: 'Eliminar avatar', uploadSuccess: 'Avatar actualizado correctamente', deleteSuccess: 'Avatar eliminado', invalidType: 'Selecciona una imagen válida (png, jpg o webp).', invalidSize: 'El archivo excede el tamaño máximo permitido (2 MB).', unexpectedError: 'No se pudo procesar el avatar.'
           },
           push: {
-            title: 'Notificaciones push',
-            permission: 'Permiso actual: {{status}}',
-            enable: 'Activar push web',
-            disable: 'Desactivar en este navegador',
-            enabled: 'Push web activado correctamente.',
-            disabled: 'Push web desactivado para este navegador.',
-            disableNeedsToken: 'No hay token local registrado para desactivar.',
-            error: 'No se pudo actualizar el estado de push web.'
+            title: 'Notificaciones push', permission: 'Permiso actual: {{status}}', enable: 'Activar push web', disable: 'Desactivar en este navegador', enabled: 'Push web activado correctamente.', disabled: 'Push web desactivado para este navegador.', disableNeedsToken: 'No hay token local registrado para desactivar.', error: 'No se pudo actualizar el estado de push web.'
           }
+        },
+        admin: {
+          title: 'Panel de administración',
+          navigation: { dashboard: 'Dashboard', users: 'Usuarios', payments: 'Pagos', subscriptions: 'Suscripciones', notifications: 'Notificaciones', avatars: 'Avatares', monetization: 'Monetización' },
+          common: { loading: 'Cargando...', loadError: 'No se pudo cargar la sección.', actionError: 'No se pudo completar la acción.', yes: 'Sí', no: 'No' },
+          dashboard: { totalUsers: 'Usuarios totales', adminUsers: 'Admins', payments: 'Pagos', subscriptions: 'Suscripciones', pushDevices: 'Dispositivos push', usersWithAvatar: 'Usuarios con avatar' },
+          users: { email: 'Email', role: 'Rol', provider: 'Proveedor', verified: 'Verificado', actions: 'Acciones', toggleRole: 'Cambiar rol', roleUpdated: 'Rol actualizado' },
+          payments: { user: 'Usuario', type: 'Tipo', status: 'Estado', amount: 'Monto' },
+          subscriptions: { user: 'Usuario', period: 'Periodicidad', status: 'Estado', externalReference: 'Referencia externa' },
+          notifications: { targetUserPlaceholder: 'ID de usuario destino', titlePlaceholder: 'Título', bodyPlaceholder: 'Mensaje', submit: 'Enviar notificación', success: 'Notificación enviada', error: 'No se pudo enviar la notificación' },
+          avatars: { user: 'Usuario', avatar: 'Avatar', actions: 'Acciones', imageAlt: 'Avatar de usuario', noAvatar: 'Sin avatar', delete: 'Eliminar avatar', deleted: 'Avatar eliminado' },
+          monetization: { mode: 'Modalidad', periodMode: 'Periodicidad permitida', save: 'Guardar configuración', updated: 'Configuración actualizada' }
         }
       }
     },
@@ -80,22 +66,11 @@ void i18n.use(initReactI18next).init({
         auth: {
           common: { goLogin: 'Go to login' },
           register: { title: 'Register', submit: 'Create account', success: 'Registration successful, check your email.' },
-          login: {
-            title: 'Login',
-            submit: 'Sign in',
-            google: 'Sign in with Google',
-            forgot: 'Forgot your password?'
-          },
+          login: { title: 'Login', submit: 'Sign in', google: 'Sign in with Google', forgot: 'Forgot your password?' },
           verify: { title: 'Verify email', submit: 'Verify', success: 'Email verified successfully' },
           forgot: { title: 'Forgot password', submit: 'Send email', success: 'If account exists, email has been sent.' },
           reset: { title: 'Reset password', submit: 'Save new password', success: 'Password updated' },
-          change: {
-            title: 'Change password',
-            current: 'Current password',
-            new: 'New password',
-            submit: 'Update',
-            success: 'Password changed'
-          }
+          change: { title: 'Change password', current: 'Current password', new: 'New password', submit: 'Update', success: 'Password changed' }
         },
         payments: {
           title: 'Monetization',
@@ -112,31 +87,26 @@ void i18n.use(initReactI18next).init({
           role: 'Role: {{role}}',
           changePassword: 'Change password',
           avatar: {
-            title: 'Avatar',
-            alt: 'User avatar',
-            empty: 'No avatar uploaded yet.',
-            delete: 'Delete avatar',
-            uploadSuccess: 'Avatar updated successfully',
-            deleteSuccess: 'Avatar deleted',
-            invalidType: 'Select a valid image (png, jpg or webp).',
-            invalidSize: 'The file exceeds the max allowed size (2 MB).',
-            unexpectedError: 'Avatar could not be processed.'
+            title: 'Avatar', alt: 'User avatar', empty: 'No avatar uploaded yet.', delete: 'Delete avatar', uploadSuccess: 'Avatar updated successfully', deleteSuccess: 'Avatar deleted', invalidType: 'Select a valid image (png, jpg or webp).', invalidSize: 'The file exceeds the max allowed size (2 MB).', unexpectedError: 'Avatar could not be processed.'
           },
           push: {
-            title: 'Push notifications',
-            permission: 'Current permission: {{status}}',
-            enable: 'Enable web push',
-            disable: 'Disable on this browser',
-            enabled: 'Web push enabled successfully.',
-            disabled: 'Web push disabled for this browser.',
-            disableNeedsToken: 'There is no local token to unregister.',
-            error: 'Web push state could not be updated.'
+            title: 'Push notifications', permission: 'Current permission: {{status}}', enable: 'Enable web push', disable: 'Disable on this browser', enabled: 'Web push enabled successfully.', disabled: 'Web push disabled for this browser.', disableNeedsToken: 'There is no local token to unregister.', error: 'Web push state could not be updated.'
           }
+        },
+        admin: {
+          title: 'Admin panel',
+          navigation: { dashboard: 'Dashboard', users: 'Users', payments: 'Payments', subscriptions: 'Subscriptions', notifications: 'Notifications', avatars: 'Avatars', monetization: 'Monetization' },
+          common: { loading: 'Loading...', loadError: 'Failed to load section.', actionError: 'Action failed.', yes: 'Yes', no: 'No' },
+          dashboard: { totalUsers: 'Total users', adminUsers: 'Admins', payments: 'Payments', subscriptions: 'Subscriptions', pushDevices: 'Push devices', usersWithAvatar: 'Users with avatar' },
+          users: { email: 'Email', role: 'Role', provider: 'Provider', verified: 'Verified', actions: 'Actions', toggleRole: 'Toggle role', roleUpdated: 'Role updated' },
+          payments: { user: 'User', type: 'Type', status: 'Status', amount: 'Amount' },
+          subscriptions: { user: 'User', period: 'Period', status: 'Status', externalReference: 'External reference' },
+          notifications: { targetUserPlaceholder: 'Target user ID', titlePlaceholder: 'Title', bodyPlaceholder: 'Message', submit: 'Send notification', success: 'Notification sent', error: 'Notification could not be sent' },
+          avatars: { user: 'User', avatar: 'Avatar', actions: 'Actions', imageAlt: 'User avatar', noAvatar: 'No avatar', delete: 'Delete avatar', deleted: 'Avatar deleted' },
+          monetization: { mode: 'Mode', periodMode: 'Allowed period', save: 'Save configuration', updated: 'Configuration updated' }
         }
       }
     }
   },
-  interpolation: {
-    escapeValue: false
-  }
+  interpolation: { escapeValue: false }
 });
