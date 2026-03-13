@@ -1,6 +1,15 @@
 import type { UserRole } from '@starter/shared-types';
 import { UserModel, type UserDocument } from '../models/user.model.js';
 
+interface AvatarRecordInput {
+  key: string;
+  url: string;
+  mimeType: string;
+  sizeBytes: number;
+  width: number;
+  height: number;
+}
+
 export class UserRepository {
   async findByEmail(email: string): Promise<UserDocument | null> {
     return UserModel.findOne({ email }).exec();
@@ -31,5 +40,23 @@ export class UserRepository {
 
   async updateLastLogin(userId: string): Promise<void> {
     await UserModel.updateOne({ _id: userId }, { $set: { lastLoginAt: new Date() } }).exec();
+  }
+
+  async setAvatar(userId: string, avatar: AvatarRecordInput): Promise<void> {
+    await UserModel.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          avatar: {
+            ...avatar,
+            updatedAt: new Date()
+          }
+        }
+      }
+    ).exec();
+  }
+
+  async clearAvatar(userId: string): Promise<void> {
+    await UserModel.updateOne({ _id: userId }, { $unset: { avatar: '' } }).exec();
   }
 }

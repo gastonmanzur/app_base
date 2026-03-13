@@ -1,3 +1,4 @@
+import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
@@ -8,6 +9,7 @@ import { logger } from './config/logger.js';
 import { errorMiddleware } from './core/error-middleware.js';
 import { notFoundMiddleware } from './core/not-found-middleware.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { avatarRouter } from './modules/avatar/avatar.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
 
 export const createApp = () => {
@@ -24,8 +26,19 @@ export const createApp = () => {
   app.use(cookieParser());
   app.use(pinoHttp({ logger }));
 
+  app.use(
+    env.AVATAR_PUBLIC_BASE_PATH,
+    express.static(path.resolve(process.cwd(), env.AVATAR_STORAGE_DIR), {
+      fallthrough: false,
+      index: false,
+      immutable: true,
+      maxAge: '7d'
+    })
+  );
+
   app.use('/api/health', healthRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api/avatars', avatarRouter);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);

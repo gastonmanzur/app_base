@@ -2,6 +2,19 @@ import mongoose, { type InferSchemaType, type Model } from 'mongoose';
 
 export const authProviders = ['local', 'google'] as const;
 
+const avatarSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true },
+    url: { type: String, required: true },
+    mimeType: { type: String, required: true },
+    sizeBytes: { type: Number, required: true },
+    width: { type: Number, required: true },
+    height: { type: Number, required: true },
+    updatedAt: { type: Date, required: true }
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     email: {
@@ -33,6 +46,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: false
     },
+    avatar: {
+      type: avatarSchema,
+      required: false
+    },
     lastLoginAt: {
       type: Date,
       required: false
@@ -42,7 +59,6 @@ const userSchema = new mongoose.Schema(
     timestamps: true
   }
 );
-
 
 export type UserDocument = InferSchemaType<typeof userSchema> & { _id: mongoose.Types.ObjectId };
 export const UserModel: Model<UserDocument> = mongoose.model<UserDocument>('User', userSchema);

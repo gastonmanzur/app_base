@@ -18,6 +18,14 @@ interface AuthResult {
     role: UserRole;
     provider: 'local' | 'google';
     emailVerified: boolean;
+    avatar: {
+      url: string;
+      width: number;
+      height: number;
+      mimeType: string;
+      sizeBytes: number;
+      updatedAt: string;
+    } | null;
   };
 }
 
@@ -79,7 +87,7 @@ export class AuthService {
       throw new AppError('EMAIL_NOT_VERIFIED', 403, 'Verify your email before logging in');
     }
 
-    return this.createSession(user._id.toString(), user.email, user.role, user.provider, user.emailVerified);
+    return this.createSession(user);
   }
 
   async loginWithGoogle(idToken: string): Promise<AuthResult> {
@@ -99,7 +107,7 @@ export class AuthService {
         emailVerified: profile.emailVerified
       }));
 
-    return this.createSession(user._id.toString(), user.email, user.role, user.provider, user.emailVerified);
+    return this.createSession(user);
   }
 
   async refreshSession(refreshToken: string): Promise<AuthResult> {
@@ -115,7 +123,7 @@ export class AuthService {
       throw new AppError('USER_NOT_FOUND', 404, 'User not found');
     }
 
-    return this.createSession(user._id.toString(), user.email, user.role, user.provider, user.emailVerified);
+    return this.createSession(user);
   }
 
   async logout(refreshToken: string): Promise<void> {
@@ -175,13 +183,29 @@ export class AuthService {
     await this.sessions.revokeAllByUserId(userId);
   }
 
-  async getProfile(userId: string): Promise<{ id: string; email: string; role: UserRole; provider: 'local' | 'google' }> {
+  async getProfile(userId: string): Promise<AuthResult['user']> {
     const user = await this.users.findById(userId);
     if (!user) {
       throw new AppError('USER_NOT_FOUND', 404, 'User not found');
     }
 
-    return { id: user._id.toString(), email: user.email, role: user.role, provider: user.provider };
+    return {
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      provider: user.provider,
+      emailVerified: user.emailVerified,
+      avatar: user.avatar
+        ? {
+            url: user.avatar.url,
+            width: user.avatar.width,
+            height: user.avatar.height,
+            mimeType: user.avatar.mimeType,
+            sizeBytes: user.avatar.sizeBytes,
+            updatedAt: user.avatar.updatedAt.toISOString()
+          }
+        : null
+    };
   }
 
   private async createAndSendVerifyEmail(userId: string, email: string): Promise<void> {
@@ -198,13 +222,12 @@ export class AuthService {
     await this.mailService.sendVerifyEmail(email, verifyUrl);
   }
 
-  private async createSession(
-    userId: string,
-    email: string,
-    role: UserRole,
-    provider: 'local' | 'google',
-    emailVerified: boolean
-  ): Promise<AuthResult> {
+  private async createSession(user: Awaited<ReturnType<UserRepository['findById']>>): Promise<AuthResult> {
+    if (!user) {
+      throw new AppError('USER_NOT_FOUND', 404, 'User not found');
+    }
+
+    const userId = user._id.toString();
     const refreshToken = this.tokenService.generateRefreshToken();
     const refreshHash = this.tokenService.hashToken(refreshToken);
     await this.sessions.create({
@@ -214,12 +237,28 @@ export class AuthService {
     });
     await this.users.updateLastLogin(userId);
 
-    const accessToken = this.tokenService.generateAccessToken({ sub: userId, role, email });
+    const accessToken = this.tokenService.generateAccessToken({ sub: userId, role: user.role, email: user.email });
 
     return {
       accessToken,
       refreshToken,
-      user: { id: userId, email, role, provider, emailVerified }
+      user: {
+        id: userId,
+        email: user.email,
+        role: user.role,
+        provider: user.provider,
+        emailVerified: user.emailVerified,
+        avatar: user.avatar
+          ? {
+              url: user.avatar.url,
+              width: user.avatar.width,
+              height: user.avatar.height,
+              mimeType: user.avatar.mimeType,
+              sizeBytes: user.avatar.sizeBytes,
+              updatedAt: user.avatar.updatedAt.toISOString()
+            }
+          : null
+      }
     };
   }
 }

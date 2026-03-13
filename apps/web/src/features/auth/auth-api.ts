@@ -1,4 +1,4 @@
-import type { AuthUserDto } from '@starter/shared-types';
+import type { AuthUserDto, AvatarDto } from '@starter/shared-types';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -11,13 +11,15 @@ interface AuthResponse {
 }
 
 const request = async <T>(path: string, init: RequestInit): Promise<T> => {
+  const headers = new Headers(init.headers ?? {});
+  if (!(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init.headers ?? {})
-    }
+    headers
   });
   const payload = (await response.json()) as T & { success?: boolean; error?: { message: string } };
   if (!response.ok) {
@@ -70,5 +72,23 @@ export const authApi = {
   },
   verifyEmail: async (token: string): Promise<void> => {
     await request(`/auth/verify-email?token=${encodeURIComponent(token)}`, { method: 'GET' });
+  },
+  uploadMyAvatar: async (accessToken: string, avatarFile: File): Promise<AvatarDto | null> => {
+    const formData = new FormData();
+    formData.append('avatar', avatarFile);
+
+    const result = await request<{ success: true; data: { avatar: AvatarDto | null } }>('/avatars/me', {
+      method: 'POST',
+      body: formData,
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    return result.data.avatar;
+  },
+  deleteMyAvatar: async (accessToken: string): Promise<void> => {
+    await request('/avatars/me', {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
   }
 };
