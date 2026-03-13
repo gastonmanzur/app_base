@@ -23,3 +23,22 @@ export interface AuthUserDto {
   emailVerified: boolean;
   avatar: AvatarDto | null;
 }
+
+export type PushPlatform = 'web' | 'android' | 'ios';
+export type PushChannel = 'web_push' | 'mobile_push';
+export type PushTokenStatus = 'active' | 'invalid' | 'revoked';
+
+export interface PushDeviceDto {
+  id: string;
+  token: string;
+  platform: PushPlatform;
+  channel: PushChannel;
+  status: PushTokenStatus;
+  deviceName: string | null;
+  appVersion: string | null;
+  osVersion: string | null;
+  lastSeenAt: string;
+  invalidatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

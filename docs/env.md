@@ -32,3 +32,15 @@
 - Root directory: `${AVATAR_STORAGE_DIR}`
 - Each uploaded avatar is stored as a generated immutable key: `<timestamp>-<uuid>.webp`
 - Public URL format: `${APP_BASE_URL}${AVATAR_PUBLIC_BASE_PATH}/{key}`
+
+- `PUSH_PROVIDER=noop` (`noop` for local/dev, `fcm` for Firebase Cloud Messaging)
+- `FCM_PROJECT_ID=<firebase project id>`
+- `FCM_CLIENT_EMAIL=<service account client email>`
+- `FCM_PRIVATE_KEY=<service account private key with \n escaped as \n>`
+
+- `VITE_FIREBASE_API_KEY=<firebase web app api key>`
+- `VITE_FIREBASE_AUTH_DOMAIN=<firebase auth domain>`
+- `VITE_FIREBASE_PROJECT_ID=<firebase project id>`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID=<firebase messaging sender id>`
+- `VITE_FIREBASE_APP_ID=<firebase web app id>`
+- `VITE_FIREBASE_WEB_PUSH_VAPID_KEY=<firebase web push vapid key>`
