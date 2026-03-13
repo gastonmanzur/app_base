@@ -20,3 +20,10 @@
 - `shared-types`: API contracts and domain primitives.
 - `shared-utils`: formatting, validators, helper functions.
 - `ui`: reusable design-system-ready components.
+
+## Stage 2 additions (auth)
+- Auth module added under `apps/api/src/modules/auth` with controller/service/repository split.
+- Refresh token strategy: opaque token in httpOnly cookie, hashed in DB sessions, rotation on refresh.
+- Email actions (`verify_email`, `reset_password`) persisted as hashed action tokens with expiry/consumption.
+- Role authorization via `requireAuth` + `requireRoles` middleware.
+- Web auth flows implemented in `apps/web/src/features/auth` with route guards and i18n-ready texts.

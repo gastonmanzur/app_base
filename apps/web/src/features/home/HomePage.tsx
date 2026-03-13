@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Card } from '@starter/ui';
 
 export const HomePage = (): ReactElement => {
@@ -12,6 +13,9 @@ export const HomePage = (): ReactElement => {
         <button type="button" onClick={() => i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es')}>
           {t('home.switchLanguage')}
         </button>
+        <p>
+          <Link to="/register">Register</Link> | <Link to="/login">Login</Link> | <Link to="/dashboard">Dashboard</Link>
+        </p>
       </Card>
     </main>
   );
