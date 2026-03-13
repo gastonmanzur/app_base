@@ -11,6 +11,7 @@ import { notFoundMiddleware } from './core/not-found-middleware.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { avatarRouter } from './modules/avatar/avatar.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
+import { pushRouter } from './modules/push/push.routes.js';
 
 export const createApp = () => {
   const app = express();
@@ -39,6 +40,7 @@ export const createApp = () => {
   app.use('/api/health', healthRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/avatars', avatarRouter);
+  app.use('/api/push', pushRouter);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);

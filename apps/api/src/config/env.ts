@@ -24,7 +24,11 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().int().positive().optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  SMTP_FROM: z.string().email().default('no-reply@example.com')
+  SMTP_FROM: z.string().email().default('no-reply@example.com'),
+  PUSH_PROVIDER: z.enum(['noop', 'fcm']).default('noop'),
+  FCM_PROJECT_ID: z.string().optional(),
+  FCM_CLIENT_EMAIL: z.string().optional(),
+  FCM_PRIVATE_KEY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

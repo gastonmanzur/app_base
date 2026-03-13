@@ -5,6 +5,7 @@ import { Card } from '@starter/ui';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthContext';
 import { authApi } from '../auth/auth-api';
+import { WebPushCard } from '../notifications/WebPushCard';
 
 const MAX_SIZE_BYTES = 2_097_152;
 
@@ -101,6 +102,8 @@ export const DashboardPage = (): ReactElement => {
           {feedback ? <p style={{ color: 'green' }}>{feedback}</p> : null}
           {error ? <p style={{ color: 'crimson' }}>{error}</p> : null}
         </section>
+
+        {accessToken ? <WebPushCard accessToken={accessToken} /> : null}
 
         <Link to="/change-password">{t('profile.changePassword')}</Link>
       </Card>
