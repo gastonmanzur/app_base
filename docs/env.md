@@ -44,3 +44,14 @@
 - `VITE_FIREBASE_MESSAGING_SENDER_ID=<firebase messaging sender id>`
 - `VITE_FIREBASE_APP_ID=<firebase web app id>`
 - `VITE_FIREBASE_WEB_PUSH_VAPID_KEY=<firebase web push vapid key>`
+
+## Mercado Pago monetization (`apps/api/.env`)
+- `MONETIZATION_MODE=one_time_only|subscriptions_only|both` (habilita modalidades de monetización)
+- `SUBSCRIPTION_PERIOD_MODE=monthly|yearly|both` (define periodicidades permitidas)
+- `MERCADOPAGO_ACCESS_TOKEN=<private token>` (credencial privada para API Mercado Pago)
+- `MERCADOPAGO_WEBHOOK_SECRET=<optional shared secret>` (validación básica de webhook)
+- `MERCADOPAGO_API_BASE_URL=https://api.mercadopago.com` (endpoint base)
+- `MERCADOPAGO_CHECKOUT_SUCCESS_URL=<frontend return URL>`
+- `MERCADOPAGO_CHECKOUT_FAILURE_URL=<frontend return URL>`
+- `MERCADOPAGO_CHECKOUT_PENDING_URL=<frontend return URL>`
+- `MERCADOPAGO_STATEMENT_DESCRIPTOR=<max 16 chars shown in card statement>`

@@ -29,6 +29,15 @@ const envSchema = z.object({
   FCM_PROJECT_ID: z.string().optional(),
   FCM_CLIENT_EMAIL: z.string().optional(),
   FCM_PRIVATE_KEY: z.string().optional(),
+  MONETIZATION_MODE: z.enum(['one_time_only', 'subscriptions_only', 'both']).default('both'),
+  SUBSCRIPTION_PERIOD_MODE: z.enum(['monthly', 'yearly', 'both']).default('both'),
+  MERCADOPAGO_ACCESS_TOKEN: z.string().optional(),
+  MERCADOPAGO_WEBHOOK_SECRET: z.string().optional(),
+  MERCADOPAGO_API_BASE_URL: z.string().url().default('https://api.mercadopago.com'),
+  MERCADOPAGO_CHECKOUT_SUCCESS_URL: z.string().url().optional(),
+  MERCADOPAGO_CHECKOUT_FAILURE_URL: z.string().url().optional(),
+  MERCADOPAGO_CHECKOUT_PENDING_URL: z.string().url().optional(),
+  MERCADOPAGO_STATEMENT_DESCRIPTOR: z.string().max(16).optional(),
 });
 
 export const env = envSchema.parse(process.env);

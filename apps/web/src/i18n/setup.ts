@@ -32,6 +32,15 @@ void i18n.use(initReactI18next).init({
             success: 'Contraseña cambiada'
           }
         },
+        payments: {
+          title: 'Monetización',
+          subtitle: 'Inicia pagos únicos o suscripciones con Mercado Pago.',
+          buyOneTime: 'Comprar pago único',
+          subscribeMonthly: 'Suscribirme mensual',
+          subscribeYearly: 'Suscribirme anual',
+          pending: 'Operación iniciada. Completa el checkout y espera confirmación por webhook.',
+          error: 'No se pudo iniciar la operación de pago.'
+        },
         profile: {
           title: 'Perfil',
           greeting: 'Hola {{email}}',
@@ -87,6 +96,15 @@ void i18n.use(initReactI18next).init({
             submit: 'Update',
             success: 'Password changed'
           }
+        },
+        payments: {
+          title: 'Monetization',
+          subtitle: 'Start one-time payments or subscriptions with Mercado Pago.',
+          buyOneTime: 'Buy one-time',
+          subscribeMonthly: 'Subscribe monthly',
+          subscribeYearly: 'Subscribe yearly',
+          pending: 'Operation started. Complete checkout and wait for webhook confirmation.',
+          error: 'Payment operation could not be started.'
         },
         profile: {
           title: 'Profile',
