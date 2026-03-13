@@ -9,6 +9,7 @@ interface AuthState {
   loading: boolean;
   setSession: (accessToken: string, user: AuthUserDto) => void;
   clearSession: () => void;
+  updateUser: (user: AuthUserDto) => void;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -45,6 +46,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }): ReactElemen
       clearSession: () => {
         setAccessToken(null);
         setUser(null);
+      },
+      updateUser: (nextUser) => {
+        setUser(nextUser);
       }
     }),
     [accessToken, loading, user]

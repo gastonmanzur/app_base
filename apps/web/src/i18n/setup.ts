@@ -31,6 +31,23 @@ void i18n.use(initReactI18next).init({
             submit: 'Actualizar',
             success: 'Contraseña cambiada'
           }
+        },
+        profile: {
+          title: 'Perfil',
+          greeting: 'Hola {{email}}',
+          role: 'Rol: {{role}}',
+          changePassword: 'Cambiar contraseña',
+          avatar: {
+            title: 'Avatar',
+            alt: 'Avatar de usuario',
+            empty: 'Todavía no tienes avatar.',
+            delete: 'Eliminar avatar',
+            uploadSuccess: 'Avatar actualizado correctamente',
+            deleteSuccess: 'Avatar eliminado',
+            invalidType: 'Selecciona una imagen válida (png, jpg o webp).',
+            invalidSize: 'El archivo excede el tamaño máximo permitido (2 MB).',
+            unexpectedError: 'No se pudo procesar el avatar.'
+          }
         }
       }
     },
@@ -59,6 +76,23 @@ void i18n.use(initReactI18next).init({
             new: 'New password',
             submit: 'Update',
             success: 'Password changed'
+          }
+        },
+        profile: {
+          title: 'Profile',
+          greeting: 'Hello {{email}}',
+          role: 'Role: {{role}}',
+          changePassword: 'Change password',
+          avatar: {
+            title: 'Avatar',
+            alt: 'User avatar',
+            empty: 'No avatar uploaded yet.',
+            delete: 'Delete avatar',
+            uploadSuccess: 'Avatar updated successfully',
+            deleteSuccess: 'Avatar deleted',
+            invalidType: 'Select a valid image (png, jpg or webp).',
+            invalidSize: 'The file exceeds the max allowed size (2 MB).',
+            unexpectedError: 'Avatar could not be processed.'
           }
         }
       }
