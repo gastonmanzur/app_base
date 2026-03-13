@@ -1,14 +1,33 @@
 import type { ChangeEvent, ReactElement } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card } from '@starter/ui';
 import { useAuth } from '../auth/AuthContext';
 import { adminPushApi } from '../notifications/admin-push-api';
+import { paymentsApi } from '../payments/payments-api';
 
 export const AdminPage = (): ReactElement => {
   const { accessToken } = useAuth();
   const [form, setForm] = useState({ targetUserId: '', title: '', body: '' });
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [transactionsCount, setTransactionsCount] = useState(0);
+  const [subscriptionsCount, setSubscriptionsCount] = useState(0);
+
+  useEffect(() => {
+    if (!accessToken) {
+      return;
+    }
+
+    void Promise.all([paymentsApi.listAdminTransactions(accessToken), paymentsApi.listAdminSubscriptions(accessToken)])
+      .then(([transactions, subscriptions]) => {
+        setTransactionsCount(transactions.length);
+        setSubscriptionsCount(subscriptions.length);
+      })
+      .catch(() => {
+        setTransactionsCount(0);
+        setSubscriptionsCount(0);
+      });
+  }, [accessToken]);
 
   const onFieldChange = (field: 'targetUserId' | 'title' | 'body') => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
     setForm((current) => ({ ...current, [field]: event.target.value }));
@@ -34,6 +53,8 @@ export const AdminPage = (): ReactElement => {
     <main style={{ maxWidth: 760, margin: '2rem auto', padding: '1rem' }}>
       <Card title="Admin">
         <p>Área restringida para administradores.</p>
+        <p>Transacciones registradas: {transactionsCount}</p>
+        <p>Suscripciones registradas: {subscriptionsCount}</p>
 
         <section style={{ display: 'grid', gap: '0.5rem' }}>
           <h3>Enviar push a usuario</h3>
