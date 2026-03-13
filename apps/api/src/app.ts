@@ -13,6 +13,7 @@ import { avatarRouter } from './modules/avatar/avatar.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
 import { pushRouter } from './modules/push/push.routes.js';
 import { paymentsRouter } from './modules/payments/payments.routes.js';
+import { adminRouter } from './modules/admin/admin.routes.js';
 
 export const createApp = () => {
   const app = express();
@@ -43,6 +44,7 @@ export const createApp = () => {
   app.use('/api/avatars', avatarRouter);
   app.use('/api/push', pushRouter);
   app.use('/api/payments', paymentsRouter);
+  app.use('/api/admin', adminRouter);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);
