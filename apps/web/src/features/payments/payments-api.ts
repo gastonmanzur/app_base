@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api').replace(/\/$/, '');
 
 const request = async <T>(path: string, init: RequestInit): Promise<T> => {
   const headers = new Headers(init.headers ?? {});

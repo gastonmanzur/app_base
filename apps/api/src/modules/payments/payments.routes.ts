@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { env } from '../../config/env.js';
+import { asyncHandler } from '../../core/async-handler.js';
 import { createRateLimiter } from '../../core/rate-limit-middleware.js';
 import { requireAuth, requireRoles } from '../auth/middleware/auth.middleware.js';
 import { PaymentsController } from './controllers/payments.controller.js';
@@ -14,11 +15,11 @@ const webhookRateLimiter = createRateLimiter({
   max: env.WEBHOOK_RATE_LIMIT_MAX
 });
 
-paymentsRouter.post('/webhooks/mercadopago', webhookRateLimiter, controller.webhook);
+paymentsRouter.post('/webhooks/mercadopago', webhookRateLimiter, asyncHandler(controller.webhook));
 
-paymentsRouter.post('/one-time', requireAuth, controller.createOneTime);
-paymentsRouter.post('/subscriptions', requireAuth, controller.createSubscription);
-paymentsRouter.get('/orders/:orderId', requireAuth, controller.getOrderStatus);
+paymentsRouter.post('/one-time', requireAuth, asyncHandler(controller.createOneTime));
+paymentsRouter.post('/subscriptions', requireAuth, asyncHandler(controller.createSubscription));
+paymentsRouter.get('/orders/:orderId', requireAuth, asyncHandler(controller.getOrderStatus));
 
-paymentsRouter.get('/admin/transactions', requireAuth, requireRoles('admin'), controller.listAdminTransactions);
-paymentsRouter.get('/admin/subscriptions', requireAuth, requireRoles('admin'), controller.listAdminSubscriptions);
+paymentsRouter.get('/admin/transactions', requireAuth, requireRoles('admin'), asyncHandler(controller.listAdminTransactions));
+paymentsRouter.get('/admin/subscriptions', requireAuth, requireRoles('admin'), asyncHandler(controller.listAdminSubscriptions));

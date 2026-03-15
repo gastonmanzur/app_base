@@ -1,22 +1,32 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-dotenv.config();
+const envFileCandidates = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'apps/api/.env'),
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env')
+];
+
+for (const envPath of envFileCandidates) {
+  dotenv.config({ path: envPath, override: false });
+}
 
 const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().default(4000),
-    MONGO_URI: z.string().min(1),
-    CORS_ORIGIN: z.string().url(),
+    MONGO_URI: z.string().min(1).default('mongodb://localhost:27017/starter'),
+    CORS_ORIGIN: z.string().default('http://localhost:5173'),
     JWT_ACCESS_SECRET: z.string().min(32),
     JWT_REFRESH_SECRET: z.string().min(32),
     JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
     JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
     EMAIL_TOKEN_EXPIRES_IN_MINUTES: z.coerce.number().int().positive().default(60),
     RESET_TOKEN_EXPIRES_IN_MINUTES: z.coerce.number().int().positive().default(30),
-    APP_BASE_URL: z.string().url(),
-    WEB_BASE_URL: z.string().url(),
+    APP_BASE_URL: z.string().url().default('http://localhost:4000'),
+    WEB_BASE_URL: z.string().url().default('http://localhost:5173'),
     AVATAR_STORAGE_DIR: z.string().default('storage/avatars'),
     AVATAR_PUBLIC_BASE_PATH: z.string().default('/media/avatars'),
     AVATAR_MAX_SIZE_BYTES: z.coerce.number().int().positive().default(2_097_152),
@@ -45,6 +55,20 @@ const envSchema = z
     WEBHOOK_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
     PUSH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
     PUSH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(40)
+  })
+  .transform((data) => {
+    const corsOrigins = data.CORS_ORIGIN.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+
+    for (const origin of corsOrigins) {
+      z.string().url().parse(origin);
+    }
+
+    return {
+      ...data,
+      CORS_ORIGIN: corsOrigins.length > 0 ? corsOrigins : [data.WEB_BASE_URL]
+    };
   })
   .superRefine((data, ctx) => {
     if (data.PUSH_PROVIDER === 'fcm' && (!data.FCM_PROJECT_ID || !data.FCM_CLIENT_EMAIL || !data.FCM_PRIVATE_KEY)) {
