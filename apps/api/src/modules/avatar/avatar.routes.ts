@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { Router } from 'express';
 import { env } from '../../config/env.js';
+import { asyncHandler } from '../../core/async-handler.js';
 import { requireAuth, requireRoles } from '../auth/middleware/auth.middleware.js';
 import { createAvatarController, avatarUploadMiddleware, avatarMulterErrorHandler } from './controllers/avatar.controller.js';
 import { AvatarService } from './services/avatar.service.js';
@@ -13,8 +14,7 @@ const avatarController = createAvatarController(avatarService);
 
 export const avatarRouter = Router();
 
-avatarRouter.get('/me', requireAuth, avatarController.getMyAvatar);
-avatarRouter.post('/me', requireAuth, (req, res, next) => {
+const uploadAvatar = (req: Parameters<typeof avatarUploadMiddleware>[0], res: Parameters<typeof avatarUploadMiddleware>[1], next: Parameters<typeof avatarUploadMiddleware>[2]): void => {
   avatarUploadMiddleware(req, res, (error: unknown) => {
     if (error) {
       try {
@@ -26,20 +26,11 @@ avatarRouter.post('/me', requireAuth, (req, res, next) => {
     }
     next();
   });
-}, avatarController.myAvatar);
-avatarRouter.delete('/me', requireAuth, avatarController.deleteMyAvatar);
+};
 
-avatarRouter.post('/users/:userId', requireAuth, requireRoles('admin'), (req, res, next) => {
-  avatarUploadMiddleware(req, res, (error: unknown) => {
-    if (error) {
-      try {
-        avatarMulterErrorHandler(error);
-      } catch (mappedError) {
-        next(mappedError);
-        return;
-      }
-    }
-    next();
-  });
-}, avatarController.adminUploadAvatar);
-avatarRouter.delete('/users/:userId', requireAuth, requireRoles('admin'), avatarController.adminDeleteAvatar);
+avatarRouter.get('/me', requireAuth, asyncHandler(avatarController.getMyAvatar));
+avatarRouter.post('/me', requireAuth, uploadAvatar, asyncHandler(avatarController.myAvatar));
+avatarRouter.delete('/me', requireAuth, asyncHandler(avatarController.deleteMyAvatar));
+
+avatarRouter.post('/users/:userId', requireAuth, requireRoles('admin'), uploadAvatar, asyncHandler(avatarController.adminUploadAvatar));
+avatarRouter.delete('/users/:userId', requireAuth, requireRoles('admin'), asyncHandler(avatarController.adminDeleteAvatar));

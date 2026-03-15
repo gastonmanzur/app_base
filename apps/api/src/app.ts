@@ -21,7 +21,14 @@ export const createApp = () => {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: (origin, callback) => {
+        if (!origin || env.CORS_ORIGIN.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error('Not allowed by CORS'));
+      },
       credentials: true
     })
   );
