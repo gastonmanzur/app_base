@@ -10,6 +10,11 @@ interface AuthResponse {
   };
 }
 
+//agregado
+console.log('VITE_API_URL =>', import.meta.env.VITE_API_URL);
+console.log('API_URL =>', API_URL);
+//
+
 const request = async <T>(path: string, init: RequestInit): Promise<T> => {
   const headers = new Headers(init.headers ?? {});
   if (!(init.body instanceof FormData) && !headers.has('Content-Type')) {

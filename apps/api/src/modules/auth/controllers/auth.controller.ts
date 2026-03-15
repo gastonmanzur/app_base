@@ -17,7 +17,6 @@ const changePasswordSchema = z.object({
 
 const authService = new AuthService();
 
-
 const refreshCookieName = 'refreshToken';
 const refreshCookieOptions = {
   httpOnly: true,
@@ -42,18 +41,19 @@ export const authController = {
   login: async (req: Request, res: Response): Promise<void> => {
     const data = loginSchema.parse(req.body);
     const session = await authService.loginLocal(data.email, data.password);
-    res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions)
+    res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions);
     res.status(200).json({ success: true, data: { accessToken: session.accessToken, user: session.user } });
   },
 
   loginWithGoogle: async (req: Request, res: Response): Promise<void> => {
     const data = googleSchema.parse(req.body);
     const session = await authService.loginWithGoogle(data.idToken);
-    res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions)
+    res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions);
     res.status(200).json({ success: true, data: { accessToken: session.accessToken, user: session.user } });
   },
 
   refresh: async (req: Request, res: Response): Promise<void> => {
+
     const parsedToken = z.string().min(10).safeParse(req.cookies[refreshCookieName]);
     if (!parsedToken.success) {
       throw new AppError('INVALID_REFRESH_TOKEN', 401, 'Refresh token is invalid or expired');
@@ -61,13 +61,31 @@ export const authController = {
 
     const session = await authService.refreshSession(parsedToken.data);
     res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions)
+
+    const parsedRefreshToken = z.string().min(10).safeParse(req.cookies?.[refreshCookieName]);
+
+    if (!parsedRefreshToken.success) {
+      res.status(401).json({ success: false, error: { message: 'Refresh token missing or invalid' } });
+      return;
+    }
+
+    const session = await authService.refreshSession(parsedRefreshToken.data);
+    res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions);
+
     res.status(200).json({ success: true, data: { accessToken: session.accessToken, user: session.user } });
   },
 
   logout: async (req: Request, res: Response): Promise<void> => {
+
     const parsedToken = z.string().min(10).safeParse(req.cookies[refreshCookieName]);
     if (parsedToken.success) {
       await authService.logout(parsedToken.data);
+
+    const parsedRefreshToken = z.string().min(10).safeParse(req.cookies?.[refreshCookieName]);
+
+    if (parsedRefreshToken.success) {
+      await authService.logout(parsedRefreshToken.data);
+
     }
 
     res.clearCookie(refreshCookieName, refreshCookieOptions);
