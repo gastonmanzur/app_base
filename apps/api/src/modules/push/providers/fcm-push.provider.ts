@@ -32,6 +32,13 @@ export class FcmPushProvider implements PushProvider {
     const providerMessages: Message[] = messages.map((message) => ({
       token: message.token,
       notification: { title: message.title, body: message.body },
+      webpush: {
+        notification: {
+          title: message.title,
+          body: message.body
+        },
+        ...(message.data?.link ? { fcmOptions: { link: message.data.link } } : {})
+      },
       ...(message.data ? { data: message.data } : {})
     }));
 
