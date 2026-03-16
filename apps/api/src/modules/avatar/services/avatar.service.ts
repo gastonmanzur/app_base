@@ -2,6 +2,7 @@ import type { UserDocument } from '../../auth/models/user.model.js';
 import type { UserRole } from '@starter/shared-types';
 import sharp from 'sharp';
 import { AppError } from '../../../core/errors.js';
+import { logger } from '../../../config/logger.js';
 import { env } from '../../../config/env.js';
 import { UserRepository } from '../../auth/repositories/user.repository.js';
 import type { FileStorageProvider } from '../file-storage/storage-provider.js';
@@ -62,17 +63,26 @@ export class AvatarService {
     const previousAvatarKey = user.avatar?.key;
     const stored = await this.storage.put({ buffer: normalizedBuffer, extension: 'webp', mimeType: 'image/webp' });
 
-    await this.users.setAvatar(input.targetUserId, {
-      key: stored.key,
-      url: stored.url,
-      mimeType: stored.mimeType,
-      sizeBytes: stored.sizeBytes,
-      width: AVATAR_SIZE,
-      height: AVATAR_SIZE
-    });
+    try {
+      await this.users.setAvatar(input.targetUserId, {
+        key: stored.key,
+        url: stored.url,
+        mimeType: stored.mimeType,
+        sizeBytes: stored.sizeBytes,
+        width: AVATAR_SIZE,
+        height: AVATAR_SIZE
+      });
+    } catch {
+      await this.storage.remove(stored.key);
+      throw new AppError('AVATAR_UPDATE_FAILED', 500, 'Unable to update avatar reference');
+    }
 
     if (previousAvatarKey && previousAvatarKey !== stored.key) {
-      await this.storage.remove(previousAvatarKey);
+      try {
+        await this.storage.remove(previousAvatarKey);
+      } catch (error) {
+        logger.warn({ error, previousAvatarKey, targetUserId: input.targetUserId }, 'Failed to clean up previous avatar file');
+      }
     }
 
     const updated = await this.users.findById(input.targetUserId);
