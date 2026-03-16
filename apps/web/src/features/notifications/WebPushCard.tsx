@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@starter/ui';
 import { notificationsApi } from './notifications-api';
-import { getWebNotificationPermission, requestWebPushToken } from './web-push';
+import { getWebNotificationPermission, initForegroundPushNotifications, requestWebPushToken } from './web-push';
 
 interface Props {
   accessToken: string;
@@ -63,6 +63,12 @@ export const WebPushCard = ({ accessToken }: Props): ReactElement => {
 
   useEffect(() => {
     const restoreToken = async (): Promise<void> => {
+      try {
+        await initForegroundPushNotifications();
+      } catch {
+        // Ignore foreground push listener init errors to avoid blocking dashboard rendering.
+      }
+
       try {
         const activeToken = await resolveActiveWebToken();
         setToken(activeToken);

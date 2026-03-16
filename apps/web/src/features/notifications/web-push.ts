@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, isSupported } from 'firebase/messaging';
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { getMessaging, getToken, isSupported, onMessage, type MessagePayload } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,6 +13,18 @@ const vapidKey = import.meta.env.VITE_FIREBASE_WEB_PUSH_VAPID_KEY;
 
 export type NotificationPermissionState = 'granted' | 'denied' | 'default' | 'unsupported';
 
+let foregroundListenerInitialized = false;
+
+const getFirebaseMessaging = async () => {
+  const supported = await isSupported();
+  if (!supported) {
+    throw new Error('Web push is not supported in this browser');
+  }
+
+  const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  return getMessaging(app);
+};
+
 export const getWebNotificationPermission = (): NotificationPermissionState => {
   if (typeof window === 'undefined' || !('Notification' in window)) {
     return 'unsupported';
@@ -21,22 +33,34 @@ export const getWebNotificationPermission = (): NotificationPermissionState => {
 };
 
 export const requestWebPushToken = async (): Promise<string> => {
-  const supported = await isSupported();
-  if (!supported) {
-    throw new Error('Web push is not supported in this browser');
-  }
-
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') {
     throw new Error('Notifications permission denied');
   }
 
-  const app = initializeApp(firebaseConfig);
-  const messaging = getMessaging(app);
+  const messaging = await getFirebaseMessaging();
   const token = await getToken(messaging, { vapidKey });
   if (!token) {
     throw new Error('Could not obtain web push token');
   }
 
   return token;
+};
+
+export const initForegroundPushNotifications = async (): Promise<void> => {
+  if (foregroundListenerInitialized || typeof window === 'undefined' || !('Notification' in window)) {
+    return;
+  }
+
+  const messaging = await getFirebaseMessaging();
+  onMessage(messaging, (payload: MessagePayload) => {
+    const title = payload.notification?.title ?? 'Notification';
+    const body = payload.notification?.body ?? '';
+
+    if (Notification.permission === 'granted') {
+      void new Notification(title, { body, data: payload.data });
+    }
+  });
+
+  foregroundListenerInitialized = true;
 };
