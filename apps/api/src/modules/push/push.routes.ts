@@ -17,5 +17,6 @@ pushRouter.post('/devices', requireAuth, pushRateLimiter, asyncHandler(pushContr
 pushRouter.patch('/devices/token', requireAuth, pushRateLimiter, asyncHandler(pushController.refresh));
 pushRouter.delete('/devices', requireAuth, pushRateLimiter, asyncHandler(pushController.unregister));
 pushRouter.get('/devices', requireAuth, asyncHandler(pushController.listMine));
+pushRouter.post('/send-test', requireAuth, pushRateLimiter, asyncHandler(pushController.sendTestMine));
 
 pushRouter.post('/admin/send', requireAuth, requireRoles('admin'), asyncHandler(pushController.sendAdmin));

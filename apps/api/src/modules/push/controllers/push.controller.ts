@@ -20,7 +20,13 @@ const sendSchema = z.object({
   targetUserId: z.string().min(8),
   title: z.string().min(1).max(120),
   body: z.string().min(1).max(500),
-  data: z.record(z.string()).optional()
+  data: z.record(z.string(), z.string()).optional()
+});
+
+const sendTestSchema = z.object({
+  title: z.string().min(1).max(120),
+  body: z.string().min(1).max(500),
+  data: z.record(z.string(), z.string()).optional()
 });
 
 const service = new PushService();
@@ -67,6 +73,20 @@ export const pushController = {
   listMine: async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const devices = await service.listMyDevices(req.auth!.userId);
     res.status(200).json({ success: true, data: { devices: devices.map(toDeviceDto) } });
+  },
+
+
+  sendTestMine: async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const data = sendTestSchema.parse(req.body);
+    const report = await service.sendToUser({
+      actorUserId: req.auth!.userId,
+      actorRole: req.auth!.role,
+      targetUserId: req.auth!.userId,
+      title: data.title,
+      body: data.body,
+      ...(data.data ? { data: data.data } : {})
+    });
+    res.status(200).json({ success: true, data: report });
   },
 
   sendAdmin: async (req: AuthenticatedRequest, res: Response): Promise<void> => {
