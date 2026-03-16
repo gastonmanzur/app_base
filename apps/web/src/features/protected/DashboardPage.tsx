@@ -42,8 +42,9 @@ export const DashboardPage = (): ReactElement => {
     setFeedback(null);
 
     try {
-      const avatar = await authApi.uploadMyAvatar(accessToken, file);
-      updateUser({ ...user, avatar });
+      await authApi.uploadMyAvatar(accessToken, file);
+      const refreshedUser = await authApi.me(accessToken);
+      updateUser(refreshedUser);
       setFeedback(t('profile.avatar.uploadSuccess'));
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : t('profile.avatar.unexpectedError'));
@@ -64,7 +65,8 @@ export const DashboardPage = (): ReactElement => {
 
     try {
       await authApi.deleteMyAvatar(accessToken);
-      updateUser({ ...user, avatar: null });
+      const refreshedUser = await authApi.me(accessToken);
+      updateUser(refreshedUser);
       setFeedback(t('profile.avatar.deleteSuccess'));
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : t('profile.avatar.unexpectedError'));
@@ -100,6 +102,7 @@ export const DashboardPage = (): ReactElement => {
             </button>
           </div>
 
+          {loading ? <p>{t('profile.avatar.loading')}</p> : null}
           {feedback ? <p style={{ color: 'green' }}>{feedback}</p> : null}
           {error ? <p style={{ color: 'crimson' }}>{error}</p> : null}
         </section>

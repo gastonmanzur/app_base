@@ -1,6 +1,12 @@
 import type { AuthUserDto, AvatarDto } from '@starter/shared-types';
 
-const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api').replace(/\/$/, '');
+const rawApiUrl = import.meta.env.VITE_API_URL;
+
+if (!rawApiUrl) {
+  throw new Error('Missing required VITE_API_URL');
+}
+
+const API_URL = rawApiUrl.replace(/\/$/, '');
 
 interface AuthResponse {
   success: true;
@@ -10,10 +16,12 @@ interface AuthResponse {
   };
 }
 
-//agregado
-console.log('VITE_API_URL =>', import.meta.env.VITE_API_URL);
-console.log('API_URL =>', API_URL);
-//
+interface ApiErrorPayload {
+  success?: boolean;
+  error?: {
+    message?: string;
+  };
+}
 
 const request = async <T>(path: string, init: RequestInit): Promise<T> => {
   const headers = new Headers(init.headers ?? {});
@@ -26,10 +34,28 @@ const request = async <T>(path: string, init: RequestInit): Promise<T> => {
     credentials: 'include',
     headers
   });
-  const payload = (await response.json()) as T & { success?: boolean; error?: { message: string } };
-  if (!response.ok) {
-    throw new Error(payload.error?.message ?? 'Unexpected request error');
+
+  const contentType = response.headers.get('content-type') ?? '';
+  const isJsonResponse = contentType.includes('application/json');
+  const rawBody = await response.text();
+
+  let payload: (T & ApiErrorPayload) | null = null;
+  if (isJsonResponse && rawBody.length > 0) {
+    try {
+      payload = JSON.parse(rawBody) as T & ApiErrorPayload;
+    } catch {
+      payload = null;
+    }
   }
+
+  if (!response.ok) {
+    throw new Error(payload?.error?.message ?? `Request failed with status ${response.status}`);
+  }
+
+  if (payload === null) {
+    return {} as T;
+  }
+
   return payload;
 };
 
