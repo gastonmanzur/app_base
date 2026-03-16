@@ -18,7 +18,12 @@ import { adminRouter } from './modules/admin/admin.routes.js';
 export const createApp = () => {
   const app = express();
 
-  app.use(helmet());
+  app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+  })
+);
+
   app.use(
     cors({
       origin: (origin, callback) => {

@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { env } from '../../../config/env.js';
 import { z } from 'zod';
+import { env } from '../../../config/env.js';
 import { AuthService } from '../services/auth.service.js';
 import type { AuthenticatedRequest } from '../types/auth-request.js';
 
@@ -93,43 +93,19 @@ export const authController = {
   },
 
   refresh: async (req: Request, res: Response): Promise<void> => {
-<<<<<<< HEAD
     const parsedToken = z.string().min(10).safeParse(req.cookies?.[refreshCookieName]);
+
     if (!parsedToken.success) {
       res.status(401).json({
         success: false,
         error: {
-          code: 'INVALID_REFRESH_TOKEN',
           message: 'Refresh token is invalid or expired'
-=======
-    const parsedRefreshToken = z
-      .string()
-      .min(10)
-      .safeParse(req.cookies?.[refreshCookieName]);
-
-    if (!parsedRefreshToken.success) {
-      res.status(401).json({
-        success: false,
-        error: {
-          message: 'Refresh token missing or invalid'
->>>>>>> cd92cf8 (Correccion de codigo2)
         }
       });
       return;
     }
 
-<<<<<<< HEAD
     const session = await authService.refreshSession(parsedToken.data);
-    res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions);
-    res.status(200).json({ success: true, data: { accessToken: session.accessToken, user: session.user } });
-  },
-
-  logout: async (req: Request, res: Response): Promise<void> => {
-    const parsedToken = z.string().min(10).safeParse(req.cookies?.[refreshCookieName]);
-    if (parsedToken.success) {
-      await authService.logout(parsedToken.data);
-=======
-    const session = await authService.refreshSession(parsedRefreshToken.data);
 
     res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions);
     res.status(200).json({
@@ -142,14 +118,10 @@ export const authController = {
   },
 
   logout: async (req: Request, res: Response): Promise<void> => {
-    const parsedRefreshToken = z
-      .string()
-      .min(10)
-      .safeParse(req.cookies?.[refreshCookieName]);
+    const parsedToken = z.string().min(10).safeParse(req.cookies?.[refreshCookieName]);
 
-    if (parsedRefreshToken.success) {
-      await authService.logout(parsedRefreshToken.data);
->>>>>>> cd92cf8 (Correccion de codigo2)
+    if (parsedToken.success) {
+      await authService.logout(parsedToken.data);
     }
 
     res.clearCookie(refreshCookieName, refreshCookieOptions);
@@ -199,6 +171,7 @@ export const authController = {
 
   changePassword: async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const data = changePasswordSchema.parse(req.body);
+
     await authService.changePassword(
       req.auth!.userId,
       data.currentPassword,
