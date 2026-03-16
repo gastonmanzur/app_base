@@ -25,6 +25,7 @@ All endpoints return the standard `{ success, data | error }` shape.
 - `PATCH /api/push/devices/token`: refresh token (`oldToken` -> `newToken`).
 - `DELETE /api/push/devices`: unregister token for current user.
 - `GET /api/push/devices`: list user devices/tokens.
+- `POST /api/push/send-test`: sends a test notification to the authenticated user.
 
 ### Admin endpoint (auth + admin role)
 - `POST /api/push/admin/send`: send push to a specific user (`targetUserId`, `title`, `body`, optional `data`).

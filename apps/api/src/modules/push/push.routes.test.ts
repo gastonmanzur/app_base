@@ -24,6 +24,13 @@ describe('push routes guards and validation', () => {
     expect(response.status).toBe(401);
   });
 
+
+  it('rejects unauthenticated send-test call', async () => {
+    const app = createTestApp();
+    const response = await request(app).post('/api/push/send-test').send({ title: 'test', body: 'body' });
+    expect(response.status).toBe(401);
+  });
+
   it('rejects non-admin call to admin send endpoint', async () => {
     const app = createTestApp();
     const userToken = tokenService.generateAccessToken({ sub: 'u1', role: 'user', email: 'user@test.com' });

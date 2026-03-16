@@ -39,7 +39,7 @@ void i18n.use(initReactI18next).init({
             title: 'Avatar', alt: 'Avatar de usuario', empty: 'Todavía no tienes avatar.', delete: 'Eliminar avatar', uploadSuccess: 'Avatar actualizado correctamente', deleteSuccess: 'Avatar eliminado', loading: 'Procesando avatar...', invalidType: 'Selecciona una imagen válida (png, jpg o webp).', invalidSize: 'El archivo excede el tamaño máximo permitido (2 MB).', unexpectedError: 'No se pudo procesar el avatar.'
           },
           push: {
-            title: 'Notificaciones push', permission: 'Permiso actual: {{status}}', enable: 'Activar push web', disable: 'Desactivar en este navegador', enabled: 'Push web activado correctamente.', disabled: 'Push web desactivado para este navegador.', disableNeedsToken: 'No hay token local registrado para desactivar.', error: 'No se pudo actualizar el estado de push web.'
+            title: 'Notificaciones push', permission: 'Permiso actual: {{status}}', status: 'Estado: {{status}}', active: 'activo', inactive: 'inactivo', enable: 'Activar push web', disable: 'Desactivar en este navegador', sendTest: 'Enviar prueba', enabled: 'Push web activado correctamente.', disabled: 'Push web desactivado para este navegador.', disableNeedsToken: 'No hay token local registrado para desactivar.', testTitle: 'Prueba de notificación', testBody: 'Esta es una notificación de prueba.', testResult: 'Enviadas: {{sent}} | fallidas: {{failed}}', error: 'No se pudo actualizar el estado de push web.'
           }
         },
         admin: {
@@ -90,7 +90,7 @@ void i18n.use(initReactI18next).init({
             title: 'Avatar', alt: 'User avatar', empty: 'No avatar uploaded yet.', delete: 'Delete avatar', uploadSuccess: 'Avatar updated successfully', deleteSuccess: 'Avatar deleted', loading: 'Processing avatar...', invalidType: 'Select a valid image (png, jpg or webp).', invalidSize: 'The file exceeds the max allowed size (2 MB).', unexpectedError: 'Avatar could not be processed.'
           },
           push: {
-            title: 'Push notifications', permission: 'Current permission: {{status}}', enable: 'Enable web push', disable: 'Disable on this browser', enabled: 'Web push enabled successfully.', disabled: 'Web push disabled for this browser.', disableNeedsToken: 'There is no local token to unregister.', error: 'Web push state could not be updated.'
+            title: 'Push notifications', permission: 'Current permission: {{status}}', status: 'Status: {{status}}', active: 'active', inactive: 'inactive', enable: 'Enable web push', disable: 'Disable on this browser', sendTest: 'Send test', enabled: 'Web push enabled successfully.', disabled: 'Web push disabled for this browser.', disableNeedsToken: 'There is no local token to unregister.', testTitle: 'Push test notification', testBody: 'This is a test push notification.', testResult: 'Sent: {{sent}} | failed: {{failed}}', error: 'Web push state could not be updated.'
           }
         },
         admin: {
