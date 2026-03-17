@@ -67,6 +67,135 @@ describe('AuthService', () => {
     await expect(service.loginWithGoogle('id-token')).rejects.toMatchObject({ code: 'PROVIDER_CONFLICT' });
   });
 
+
+  it('persists googlePictureUrl for a new google user and returns it in session avatar', async () => {
+    const createdGoogleUser = {
+      ...baseUser,
+      provider: 'google' as const,
+      passwordHash: undefined,
+      googleId: 'gid-1',
+      googlePictureUrl: 'https://google.test/avatar-new.jpg',
+      updatedAt: new Date()
+    };
+
+    const users = {
+      findByEmail: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue(createdGoogleUser),
+      updateLastLogin: vi.fn()
+    };
+
+    const sessions = {
+      create: vi.fn()
+    };
+
+    const service = new AuthService(
+      users as never,
+      sessions as never,
+      {} as never,
+      undefined,
+      {} as never,
+      {
+        verifyIdToken: vi.fn().mockResolvedValue({
+          email: 'john@example.com',
+          googleId: 'gid-1',
+          emailVerified: true,
+          picture: 'https://google.test/avatar-new.jpg'
+        })
+      } as never
+    );
+
+    const result = await service.loginWithGoogle('id-token');
+
+    expect(users.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: 'google',
+        googleId: 'gid-1',
+        googlePictureUrl: 'https://google.test/avatar-new.jpg'
+      })
+    );
+    expect(result.user.avatar?.url).toBe('https://google.test/avatar-new.jpg');
+  });
+
+  it('updates google profile for existing google users and returns updated avatar in session/profile', async () => {
+    const existingGoogleUser = {
+      ...baseUser,
+      provider: 'google' as const,
+      passwordHash: undefined,
+      googleId: 'gid-old',
+      googlePictureUrl: 'https://google.test/avatar-old.jpg',
+      updatedAt: new Date('2025-01-01')
+    };
+
+    const updatedGoogleUser = {
+      ...existingGoogleUser,
+      googleId: 'gid-new',
+      googlePictureUrl: 'https://google.test/avatar-new.jpg',
+      updatedAt: new Date('2025-02-01')
+    };
+
+    const users = {
+      findByEmail: vi.fn().mockResolvedValue(existingGoogleUser),
+      updateGoogleProfile: vi.fn().mockResolvedValue(updatedGoogleUser),
+      findById: vi.fn().mockResolvedValue(updatedGoogleUser),
+      updateLastLogin: vi.fn()
+    };
+
+    const sessions = {
+      create: vi.fn()
+    };
+
+    const service = new AuthService(
+      users as never,
+      sessions as never,
+      {} as never,
+      undefined,
+      {} as never,
+      {
+        verifyIdToken: vi.fn().mockResolvedValue({
+          email: 'john@example.com',
+          googleId: 'gid-new',
+          emailVerified: true,
+          picture: 'https://google.test/avatar-new.jpg'
+        })
+      } as never
+    );
+
+    const session = await service.loginWithGoogle('id-token');
+    const profile = await service.getProfile('u1');
+
+    expect(users.updateGoogleProfile).toHaveBeenCalledWith('u1', {
+      googleId: 'gid-new',
+      googlePictureUrl: 'https://google.test/avatar-new.jpg'
+    });
+    expect(session.user.avatar?.url).toBe('https://google.test/avatar-new.jpg');
+    expect(profile.avatar?.url).toBe('https://google.test/avatar-new.jpg');
+  });
+
+  it('keeps local users using manual avatar in profile', async () => {
+    const localWithAvatar = {
+      ...baseUser,
+      provider: 'local' as const,
+      avatar: {
+        key: 'avatar-key',
+        url: 'https://cdn.test/local-avatar.png',
+        mimeType: 'image/png',
+        sizeBytes: 123,
+        width: 64,
+        height: 64,
+        updatedAt: new Date('2025-03-01')
+      }
+    };
+
+    const users = {
+      findById: vi.fn().mockResolvedValue(localWithAvatar)
+    };
+
+    const service = new AuthService(users as never, {} as never, {} as never, {} as never, {} as never, {} as never);
+    const profile = await service.getProfile('u1');
+
+    expect(profile.avatar?.url).toBe('https://cdn.test/local-avatar.png');
+  });
+
   it('rotates refresh token on refresh session', async () => {
     const sessions = {
       findActiveByHash: vi.fn().mockResolvedValue({ userId: { toString: () => 'u1' } }),

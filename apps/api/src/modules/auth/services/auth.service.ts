@@ -98,19 +98,23 @@ export class AuthService {
       throw new AppError('PROVIDER_CONFLICT', 409, 'This email is already registered with email/password');
     }
 
-    const user =
-      existing ??
-      (await this.users.create({
+    if (!existing) {
+      const user = await this.users.create({
         email: profile.email,
         provider: 'google',
         googleId: profile.googleId,
         ...(profile.picture ? { googlePictureUrl: profile.picture } : {}),
         emailVerified: profile.emailVerified
-      }));
+      });
 
-    await this.users.setGooglePictureUrl(user._id.toString(), profile.picture);
+      return this.createSession(user);
+    }
 
-    const refreshedUser = await this.users.findById(user._id.toString());
+    const refreshedUser = await this.users.updateGoogleProfile(existing._id.toString(), {
+      googleId: profile.googleId,
+      googlePictureUrl: profile.picture
+    });
+
     return this.createSession(refreshedUser);
   }
 
