@@ -82,24 +82,31 @@ export const LoginPage = (): ReactElement => {
         >
           {t('auth.login.submit')}
         </button>
-        <button
-          type="button"
-          onClick={async () => {
-            try {
-              const provider = new GoogleAuthProvider();
-              const auth = getFirebaseAuth();
-              const result = await signInWithPopup(auth, provider);
-              const idToken = await result.user.getIdToken();
-              const session = await authApi.loginGoogle(idToken);
-              setSession(session.accessToken, session.user);
-              navigate('/dashboard');
-            } catch (cause) {
-              setError(getGoogleLoginErrorMessage(cause));
-            }
-          }}
-        >
-          {t('auth.login.google')}
-        </button>
+       <button
+  type="button"
+  onClick={async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const auth = getFirebaseAuth();
+      const result = await signInWithPopup(auth, provider);
+
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const idToken = credential?.idToken;
+
+      if (!idToken) {
+        throw new Error('No se pudo obtener el Google ID token');
+      }
+
+      const session = await authApi.loginGoogle(idToken);
+      setSession(session.accessToken, session.user);
+      navigate('/dashboard');
+    } catch (cause) {
+      setError(getGoogleLoginErrorMessage(cause));
+    }
+  }}
+>
+  {t('auth.login.google')}
+</button>
         <p>{error}</p>
         <Link to="/forgot-password">{t('auth.login.forgot')}</Link>
       </Card>

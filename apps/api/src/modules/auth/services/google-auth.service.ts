@@ -16,20 +16,26 @@ export class GoogleAuthService {
       throw new AppError('GOOGLE_AUTH_NOT_CONFIGURED', 503, 'Google auth is not configured');
     }
 
-    const ticket = await this.client.verifyIdToken({
-      idToken,
-      audience: env.GOOGLE_CLIENT_ID
-    });
+    try {
+      const ticket = await this.client.verifyIdToken({
+        idToken,
+        audience: env.GOOGLE_CLIENT_ID
+      });
 
-    const payload = ticket.getPayload();
-    if (!payload?.sub || !payload.email) {
+      const payload = ticket.getPayload();
+
+      if (!payload?.sub || !payload.email) {
+        throw new AppError('INVALID_GOOGLE_TOKEN', 401, 'Invalid Google token');
+      }
+
+      return {
+        googleId: payload.sub,
+        email: payload.email.toLowerCase(),
+        emailVerified: Boolean(payload.email_verified)
+      };
+    } catch (error) {
+      console.error('Google token verification failed:', error);
       throw new AppError('INVALID_GOOGLE_TOKEN', 401, 'Invalid Google token');
     }
-
-    return {
-      googleId: payload.sub,
-      email: payload.email.toLowerCase(),
-      emailVerified: Boolean(payload.email_verified)
-    };
   }
 }
