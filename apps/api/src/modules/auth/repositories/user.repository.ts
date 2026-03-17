@@ -57,12 +57,17 @@ export class UserRepository {
     input: {
       googleId: string;
       googlePictureUrl: string | null;
+      emailVerified: boolean;
     }
   ): Promise<UserDocument | null> {
     const setFields: {
+      provider: 'google';
+      emailVerified: boolean;
       googleId: string;
       googlePictureUrl?: string;
     } = {
+      provider: 'google',
+      emailVerified: input.emailVerified,
       googleId: input.googleId
     };
 

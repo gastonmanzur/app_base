@@ -93,8 +93,9 @@ export class AuthService {
   async loginWithGoogle(idToken: string): Promise<AuthResult> {
     const profile = await this.googleAuth.verifyIdToken(idToken);
     const existing = await this.users.findByEmail(profile.email);
+    const existingProvider = existing?.provider?.toLowerCase();
 
-    if (existing && existing.provider !== 'google') {
+    if (existing && existingProvider !== 'google') {
       throw new AppError('PROVIDER_CONFLICT', 409, 'This email is already registered with email/password');
     }
 
@@ -112,7 +113,8 @@ export class AuthService {
 
     const refreshedUser = await this.users.updateGoogleProfile(existing._id.toString(), {
       googleId: profile.googleId,
-      googlePictureUrl: profile.picture
+      googlePictureUrl: profile.picture,
+      emailVerified: profile.emailVerified
     });
 
     return this.createSession(refreshedUser);
