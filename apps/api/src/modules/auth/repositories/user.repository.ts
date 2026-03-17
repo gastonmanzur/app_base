@@ -52,6 +52,38 @@ export class UserRepository {
     await UserModel.updateOne({ _id: userId }, { $unset: { googlePictureUrl: '' } }).exec();
   }
 
+  async updateGoogleProfile(
+    userId: string,
+    input: {
+      googleId: string;
+      googlePictureUrl: string | null;
+    }
+  ): Promise<UserDocument | null> {
+    const setFields: {
+      googleId: string;
+      googlePictureUrl?: string;
+    } = {
+      googleId: input.googleId
+    };
+
+    const unsetFields: Record<string, ''> = {};
+
+    if (input.googlePictureUrl) {
+      setFields.googlePictureUrl = input.googlePictureUrl;
+    } else {
+      unsetFields.googlePictureUrl = '';
+    }
+
+    return UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $set: setFields,
+        ...(Object.keys(unsetFields).length > 0 ? { $unset: unsetFields } : {})
+      },
+      { new: true }
+    ).exec();
+  }
+
   async setAvatar(userId: string, avatar: AvatarRecordInput): Promise<void> {
     await UserModel.updateOne(
       { _id: userId },
