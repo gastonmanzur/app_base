@@ -60,6 +60,10 @@ export class AvatarService {
       throw new AppError('USER_NOT_FOUND', 404, 'User not found');
     }
 
+    if (user.provider === 'google') {
+      throw new AppError('GOOGLE_AVATAR_MANAGED_EXTERNALLY', 403, 'Google account avatars are managed from Google profile');
+    }
+
     const previousAvatarKey = user.avatar?.key;
     const stored = await this.storage.put({ buffer: normalizedBuffer, extension: 'webp', mimeType: 'image/webp' });
 
@@ -95,6 +99,10 @@ export class AvatarService {
     const user = await this.users.findById(targetUserId);
     if (!user) {
       throw new AppError('USER_NOT_FOUND', 404, 'User not found');
+    }
+
+    if (user.provider === 'google') {
+      throw new AppError('GOOGLE_AVATAR_MANAGED_EXTERNALLY', 403, 'Google account avatars are managed from Google profile');
     }
 
     const previousAvatarKey = user.avatar?.key;

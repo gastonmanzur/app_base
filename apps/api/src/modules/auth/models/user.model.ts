@@ -46,6 +46,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: false
     },
+    googlePictureUrl: {
+      type: String,
+      required: false
+    },
     avatar: {
       type: avatarSchema,
       required: false

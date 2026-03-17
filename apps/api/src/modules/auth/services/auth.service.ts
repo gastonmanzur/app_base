@@ -104,10 +104,14 @@ export class AuthService {
         email: profile.email,
         provider: 'google',
         googleId: profile.googleId,
+        ...(profile.picture ? { googlePictureUrl: profile.picture } : {}),
         emailVerified: profile.emailVerified
       }));
 
-    return this.createSession(user);
+    await this.users.setGooglePictureUrl(user._id.toString(), profile.picture);
+
+    const refreshedUser = await this.users.findById(user._id.toString());
+    return this.createSession(refreshedUser);
   }
 
   async refreshSession(refreshToken: string): Promise<AuthResult> {
@@ -195,16 +199,38 @@ export class AuthService {
       role: user.role,
       provider: user.provider,
       emailVerified: user.emailVerified,
-      avatar: user.avatar
-        ? {
-            url: user.avatar.url,
-            width: user.avatar.width,
-            height: user.avatar.height,
-            mimeType: user.avatar.mimeType,
-            sizeBytes: user.avatar.sizeBytes,
-            updatedAt: user.avatar.updatedAt.toISOString()
-          }
-        : null
+      avatar: this.resolveUserAvatar(user)
+    };
+  }
+
+
+  private resolveUserAvatar(user: NonNullable<Awaited<ReturnType<UserRepository['findById']>>>): AuthResult['user']['avatar'] {
+    if (user.provider === 'google') {
+      if (!user.googlePictureUrl) {
+        return null;
+      }
+
+      return {
+        url: user.googlePictureUrl,
+        width: 0,
+        height: 0,
+        mimeType: 'image/jpeg',
+        sizeBytes: 0,
+        updatedAt: user.updatedAt.toISOString()
+      };
+    }
+
+    if (!user.avatar) {
+      return null;
+    }
+
+    return {
+      url: user.avatar.url,
+      width: user.avatar.width,
+      height: user.avatar.height,
+      mimeType: user.avatar.mimeType,
+      sizeBytes: user.avatar.sizeBytes,
+      updatedAt: user.avatar.updatedAt.toISOString()
     };
   }
 
@@ -248,16 +274,7 @@ export class AuthService {
         role: user.role,
         provider: user.provider,
         emailVerified: user.emailVerified,
-        avatar: user.avatar
-          ? {
-              url: user.avatar.url,
-              width: user.avatar.width,
-              height: user.avatar.height,
-              mimeType: user.avatar.mimeType,
-              sizeBytes: user.avatar.sizeBytes,
-              updatedAt: user.avatar.updatedAt.toISOString()
-            }
-          : null
+        avatar: this.resolveUserAvatar(user)
       }
     };
   }
