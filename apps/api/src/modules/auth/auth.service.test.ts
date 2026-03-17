@@ -61,7 +61,7 @@ describe('AuthService', () => {
       {} as never,
       {} as never,
       {} as never,
-      { verifyIdToken: vi.fn().mockResolvedValue({ email: 'john@example.com', googleId: 'gid-1', emailVerified: true }) } as never
+      { verifyIdToken: vi.fn().mockResolvedValue({ email: 'john@example.com', googleId: 'gid-1', emailVerified: true, picture: null }) } as never
     );
 
     await expect(service.loginWithGoogle('id-token')).rejects.toMatchObject({ code: 'PROVIDER_CONFLICT' });

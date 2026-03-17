@@ -78,6 +78,24 @@ describe('AvatarService', () => {
     ).rejects.toMatchObject({ code: 'FILE_TOO_LARGE' } satisfies Partial<AppError>);
   });
 
+
+  it('rejects avatar upload for google users', async () => {
+    const users = createMockUserRepo();
+    const storage = createMockStorage();
+    users.findById.mockResolvedValue({ _id: { toString: () => 'u1' }, provider: 'google', avatar: null });
+
+    const service = new AvatarService(users as never, storage as never);
+
+    await expect(
+      service.uploadAvatar({
+        actorUserId: 'u1',
+        actorRole: 'user',
+        targetUserId: 'u1',
+        file: { buffer: pngBuffer, mimetype: 'image/png', size: pngBuffer.length } as Express.Multer.File
+      })
+    ).rejects.toMatchObject({ code: 'GOOGLE_AVATAR_MANAGED_EXTERNALLY' } satisfies Partial<AppError>);
+  });
+
   it('deletes previous avatar on replacement', async () => {
     const users = createMockUserRepo();
     const storage = createMockStorage();
@@ -126,6 +144,19 @@ describe('AvatarService', () => {
 
     expect(users.clearAvatar).toHaveBeenCalledWith('u1');
     expect(storage.remove).toHaveBeenCalledWith('old-key');
+  });
+
+
+  it('rejects avatar deletion for google users', async () => {
+    const users = createMockUserRepo();
+    const storage = createMockStorage();
+    users.findById.mockResolvedValue({ _id: { toString: () => 'u1' }, provider: 'google', avatar: null });
+
+    const service = new AvatarService(users as never, storage as never);
+
+    await expect(service.deleteAvatar('u1', 'u1', 'user')).rejects.toMatchObject({
+      code: 'GOOGLE_AVATAR_MANAGED_EXTERNALLY'
+    } satisfies Partial<AppError>);
   });
 
   it('does not fail deleting when avatar does not exist', async () => {

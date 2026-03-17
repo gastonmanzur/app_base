@@ -25,6 +25,7 @@ export class UserRepository {
     passwordHash?: string;
     emailVerified: boolean;
     googleId?: string;
+    googlePictureUrl?: string;
     role?: UserRole;
   }): Promise<UserDocument> {
     return UserModel.create(input);
@@ -40,6 +41,15 @@ export class UserRepository {
 
   async updateLastLogin(userId: string): Promise<void> {
     await UserModel.updateOne({ _id: userId }, { $set: { lastLoginAt: new Date() } }).exec();
+  }
+
+  async setGooglePictureUrl(userId: string, googlePictureUrl: string | null): Promise<void> {
+    if (googlePictureUrl) {
+      await UserModel.updateOne({ _id: userId }, { $set: { googlePictureUrl } }).exec();
+      return;
+    }
+
+    await UserModel.updateOne({ _id: userId }, { $unset: { googlePictureUrl: '' } }).exec();
   }
 
   async setAvatar(userId: string, avatar: AvatarRecordInput): Promise<void> {

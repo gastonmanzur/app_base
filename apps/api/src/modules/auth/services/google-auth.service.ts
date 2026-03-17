@@ -6,6 +6,7 @@ export interface GoogleProfile {
   googleId: string;
   email: string;
   emailVerified: boolean;
+  picture: string | null;
 }
 
 export class GoogleAuthService {
@@ -31,7 +32,8 @@ export class GoogleAuthService {
       return {
         googleId: payload.sub,
         email: payload.email.toLowerCase(),
-        emailVerified: Boolean(payload.email_verified)
+        emailVerified: Boolean(payload.email_verified),
+        picture: typeof payload.picture === 'string' ? payload.picture : null
       };
     } catch (error) {
       console.error('Google token verification failed:', error);
