@@ -1,12 +1,32 @@
 import type { ReactElement } from 'react';
 import { useState } from 'react';
+import type { FirebaseError } from 'firebase/app';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '@starter/ui';
+import { getFirebaseAuth } from '../../lib/firebase-client';
 import { authApi } from './auth-api';
 import { useAuth } from './AuthContext';
 
 const viewStyle = { maxWidth: 560, margin: '2rem auto', padding: '1rem' };
+
+const getGoogleLoginErrorMessage = (cause: unknown): string => {
+  const error = cause as FirebaseError;
+
+  switch (error.code) {
+    case 'auth/account-exists-with-different-credential':
+      return 'Esta cuenta ya existe con otro método de autenticación.';
+    case 'auth/popup-closed-by-user':
+      return 'Se cerró la ventana de Google antes de completar el login.';
+    case 'auth/popup-blocked':
+      return 'El navegador bloqueó el popup de Google. Habilítalo e inténtalo de nuevo.';
+    case 'auth/cancelled-popup-request':
+      return 'Ya hay una solicitud de login en curso.';
+    default:
+      return (cause as Error).message;
+  }
+};
 
 export const RegisterPage = (): ReactElement => {
   const { t } = useTranslation();
@@ -65,11 +85,17 @@ export const LoginPage = (): ReactElement => {
         <button
           type="button"
           onClick={async () => {
-            const fakeGoogleToken = window.prompt('Google ID Token');
-            if (!fakeGoogleToken) return;
-            const session = await authApi.loginGoogle(fakeGoogleToken);
-            setSession(session.accessToken, session.user);
-            navigate('/dashboard');
+            try {
+              const provider = new GoogleAuthProvider();
+              const auth = getFirebaseAuth();
+              const result = await signInWithPopup(auth, provider);
+              const idToken = await result.user.getIdToken();
+              const session = await authApi.loginGoogle(idToken);
+              setSession(session.accessToken, session.user);
+              navigate('/dashboard');
+            } catch (cause) {
+              setError(getGoogleLoginErrorMessage(cause));
+            }
           }}
         >
           {t('auth.login.google')}
