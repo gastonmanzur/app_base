@@ -165,10 +165,64 @@ describe('AuthService', () => {
 
     expect(users.updateGoogleProfile).toHaveBeenCalledWith('u1', {
       googleId: 'gid-new',
-      googlePictureUrl: 'https://google.test/avatar-new.jpg'
+      googlePictureUrl: 'https://google.test/avatar-new.jpg',
+      emailVerified: true
     });
     expect(session.user.avatar?.url).toBe('https://google.test/avatar-new.jpg');
     expect(profile.avatar?.url).toBe('https://google.test/avatar-new.jpg');
+  });
+
+
+  it('allows legacy Google provider casing and normalizes provider on update', async () => {
+    const legacyGoogleUser = {
+      ...baseUser,
+      provider: 'Google',
+      passwordHash: undefined,
+      googleId: 'gid-old',
+      updatedAt: new Date('2025-01-01')
+    };
+
+    const updatedGoogleUser = {
+      ...legacyGoogleUser,
+      provider: 'google' as const,
+      googleId: 'gid-new',
+      googlePictureUrl: 'https://google.test/avatar-new.jpg',
+      updatedAt: new Date('2025-02-01')
+    };
+
+    const users = {
+      findByEmail: vi.fn().mockResolvedValue(legacyGoogleUser),
+      updateGoogleProfile: vi.fn().mockResolvedValue(updatedGoogleUser),
+      updateLastLogin: vi.fn()
+    };
+
+    const sessions = {
+      create: vi.fn()
+    };
+
+    const service = new AuthService(
+      users as never,
+      sessions as never,
+      {} as never,
+      undefined,
+      {} as never,
+      {
+        verifyIdToken: vi.fn().mockResolvedValue({
+          email: 'john@example.com',
+          googleId: 'gid-new',
+          emailVerified: true,
+          picture: 'https://google.test/avatar-new.jpg'
+        })
+      } as never
+    );
+
+    await service.loginWithGoogle('id-token');
+
+    expect(users.updateGoogleProfile).toHaveBeenCalledWith('u1', {
+      googleId: 'gid-new',
+      googlePictureUrl: 'https://google.test/avatar-new.jpg',
+      emailVerified: true
+    });
   });
 
   it('keeps local users using manual avatar in profile', async () => {
