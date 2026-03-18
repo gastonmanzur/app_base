@@ -96,6 +96,8 @@ export class AuthService {
     const existing = await this.users.findByEmail(profile.email);
     const existingProvider = existing?.provider?.toLowerCase();
 
+    console.log('GOOGLE PROFILE =>', profile);
+
     if (existing && existingProvider !== 'google') {
       throw new AppError('PROVIDER_CONFLICT', 409, 'This email is already registered with email/password');
     }

@@ -85,6 +85,7 @@ export const LoginPage = (): ReactElement => {
        <button
   type="button"
   onClick={async () => {
+    
     try {
       const provider = new GoogleAuthProvider();
       const auth = getFirebaseAuth();
@@ -92,6 +93,10 @@ export const LoginPage = (): ReactElement => {
 
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const idToken = credential?.idToken;
+
+      console.log('GOOGLE CREDENTIAL =>', credential);
+console.log('GOOGLE USER =>', result.user);
+console.log('GOOGLE PHOTO URL =>', result.user.photoURL);
 
       if (!idToken) {
         throw new Error('No se pudo obtener el Google ID token');
@@ -103,8 +108,11 @@ export const LoginPage = (): ReactElement => {
     } catch (cause) {
       setError(getGoogleLoginErrorMessage(cause));
     }
+    
   }}
->
+  
+  >
+  
   {t('auth.login.google')}
 </button>
         <p>{error}</p>
