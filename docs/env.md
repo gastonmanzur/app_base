@@ -43,7 +43,10 @@
 - `MONETIZATION_MODE=one_time_only|subscriptions_only|both`
 - `SUBSCRIPTION_PERIOD_MODE=monthly|yearly|both`
 - `MERCADOPAGO_ACCESS_TOKEN=<private token>`
+- `MP_ACCESS_TOKEN=<alias opcional de MERCADOPAGO_ACCESS_TOKEN>`
+- `MP_PUBLIC_KEY=<clave pública para frontend, opcional en esta etapa>`
 - `MERCADOPAGO_WEBHOOK_SECRET=<required in production>`
+- `MP_WEBHOOK_SECRET=<alias opcional de MERCADOPAGO_WEBHOOK_SECRET>`
 - `MERCADOPAGO_API_BASE_URL=https://api.mercadopago.com`
 - `MERCADOPAGO_CHECKOUT_SUCCESS_URL=<optional>`
 - `MERCADOPAGO_CHECKOUT_FAILURE_URL=<optional>`
@@ -59,7 +62,7 @@
 - `PUSH_RATE_LIMIT_MAX=40`
 
 ## Web (`apps/web/.env`)
-- `VITE_API_URL=http://localhost:4000/api`
+- `VITE_API_URL=http://localhost:5000/api`
 - `VITE_FIREBASE_API_KEY=<optional if no push>`
 - `VITE_FIREBASE_AUTH_DOMAIN=<optional if no push>`
 - `VITE_FIREBASE_PROJECT_ID=<optional if no push>`

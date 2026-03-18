@@ -45,5 +45,6 @@ export interface PaymentProvider {
   createOneTimePayment(input: CreateOneTimePaymentInput): Promise<ProviderCheckoutResponse>;
   createSubscription(input: CreateSubscriptionInput): Promise<ProviderCheckoutResponse>;
   getPaymentStatus(providerPaymentId: string): Promise<ProviderPaymentStatus>;
+  getPaymentStatusByExternalReference(externalReference: string): Promise<ProviderPaymentStatus | null>;
   getSubscriptionStatus(providerPreapprovalId: string): Promise<ProviderSubscriptionStatus>;
 }

@@ -10,8 +10,11 @@ interface Props {
 export const MonetizationCard = ({ accessToken }: Props): ReactElement => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [syncingStatus, setSyncingStatus] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const [lastStatus, setLastStatus] = useState<string | null>(null);
 
   const openCheckout = (url: string): void => {
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -27,6 +30,8 @@ export const MonetizationCard = ({ accessToken }: Props): ReactElement => {
         amount: 2990,
         currency: 'ARS'
       });
+      setLastOrderId(result.orderId);
+      setLastStatus(result.status);
       setMessage(t('payments.pending'));
       openCheckout(result.checkoutUrl);
     } catch (requestError) {
@@ -36,24 +41,22 @@ export const MonetizationCard = ({ accessToken }: Props): ReactElement => {
     }
   };
 
-  const onSubscribe = async (period: 'monthly' | 'yearly'): Promise<void> => {
-    setLoading(true);
+  const onRefreshStatus = async (): Promise<void> => {
+    if (!lastOrderId) {
+      return;
+    }
+
+    setSyncingStatus(true);
     setError(null);
     setMessage(null);
     try {
-      const result = await paymentsApi.createSubscription(accessToken, {
-        planCode: period === 'monthly' ? 'pro_monthly' : 'pro_yearly',
-        title: period === 'monthly' ? 'Plan Pro mensual' : 'Plan Pro anual',
-        amount: period === 'monthly' ? 1990 : 19900,
-        currency: 'ARS',
-        period
-      });
-      setMessage(t('payments.pending'));
-      openCheckout(result.checkoutUrl);
+      const result = await paymentsApi.getOrderStatus(accessToken, lastOrderId, true);
+      setLastStatus(result.status);
+      setMessage(t('payments.statusUpdated'));
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : t('payments.error'));
     } finally {
-      setLoading(false);
+      setSyncingStatus(false);
     }
   };
 
@@ -65,13 +68,17 @@ export const MonetizationCard = ({ accessToken }: Props): ReactElement => {
         <button type="button" onClick={onBuy} disabled={loading}>
           {t('payments.buyOneTime')}
         </button>
-        <button type="button" onClick={() => void onSubscribe('monthly')} disabled={loading}>
-          {t('payments.subscribeMonthly')}
-        </button>
-        <button type="button" onClick={() => void onSubscribe('yearly')} disabled={loading}>
-          {t('payments.subscribeYearly')}
+        <button type="button" onClick={() => void onRefreshStatus()} disabled={syncingStatus || !lastOrderId}>
+          {t('payments.refreshStatus')}
         </button>
       </div>
+      {lastOrderId ? (
+        <p>
+          {t('payments.lastOrder')}: <code>{lastOrderId}</code>
+          <br />
+          {t('payments.currentStatus')}: <strong>{lastStatus ?? t('payments.unknown')}</strong>
+        </p>
+      ) : null}
       {message ? <p style={{ color: 'green' }}>{message}</p> : null}
       {error ? <p style={{ color: 'crimson' }}>{error}</p> : null}
     </section>
