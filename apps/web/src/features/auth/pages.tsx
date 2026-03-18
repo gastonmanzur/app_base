@@ -97,7 +97,7 @@ export const LoginPage = (): ReactElement => {
         throw new Error('No se pudo obtener el Google ID token');
       }
 
-      const session = await authApi.loginGoogle(idToken);
+      const session = await authApi.loginGoogle({ idToken, photoURL: result.user.photoURL });
       setSession(session.accessToken, session.user);
       navigate('/dashboard');
     } catch (cause) {

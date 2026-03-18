@@ -68,6 +68,54 @@ describe('AuthService', () => {
   });
 
 
+
+  it('uses frontend photoURL as fallback when verified token has no picture for new google users', async () => {
+    const createdGoogleUser = {
+      ...baseUser,
+      provider: 'google' as const,
+      passwordHash: undefined,
+      googleId: 'gid-1',
+      googlePictureUrl: 'https://google.test/avatar-fallback.jpg',
+      updatedAt: new Date()
+    };
+
+    const users = {
+      findByEmail: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue(createdGoogleUser),
+      updateLastLogin: vi.fn()
+    };
+
+    const sessions = {
+      create: vi.fn()
+    };
+
+    const service = new AuthService(
+      users as never,
+      sessions as never,
+      {} as never,
+      undefined,
+      {} as never,
+      {
+        verifyIdToken: vi.fn().mockResolvedValue({
+          email: 'john@example.com',
+          googleId: 'gid-1',
+          emailVerified: true,
+          picture: null
+        })
+      } as never
+    );
+
+    await service.loginWithGoogle('id-token', 'https://google.test/avatar-fallback.jpg');
+
+    expect(users.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: 'google',
+        googleId: 'gid-1',
+        googlePictureUrl: 'https://google.test/avatar-fallback.jpg'
+      })
+    );
+  });
+
   it('persists googlePictureUrl for a new google user and returns it in session avatar', async () => {
     const createdGoogleUser = {
       ...baseUser,
@@ -172,6 +220,58 @@ describe('AuthService', () => {
     expect(profile.avatar?.url).toBe('https://google.test/avatar-new.jpg');
   });
 
+
+
+  it('uses frontend photoURL as fallback when verified token has no picture for existing google users', async () => {
+    const existingGoogleUser = {
+      ...baseUser,
+      provider: 'google' as const,
+      passwordHash: undefined,
+      googleId: 'gid-old',
+      updatedAt: new Date('2025-01-01')
+    };
+
+    const updatedGoogleUser = {
+      ...existingGoogleUser,
+      googleId: 'gid-new',
+      googlePictureUrl: 'https://google.test/avatar-fallback.jpg',
+      updatedAt: new Date('2025-02-01')
+    };
+
+    const users = {
+      findByEmail: vi.fn().mockResolvedValue(existingGoogleUser),
+      updateGoogleProfile: vi.fn().mockResolvedValue(updatedGoogleUser),
+      updateLastLogin: vi.fn()
+    };
+
+    const sessions = {
+      create: vi.fn()
+    };
+
+    const service = new AuthService(
+      users as never,
+      sessions as never,
+      {} as never,
+      undefined,
+      {} as never,
+      {
+        verifyIdToken: vi.fn().mockResolvedValue({
+          email: 'john@example.com',
+          googleId: 'gid-new',
+          emailVerified: true,
+          picture: null
+        })
+      } as never
+    );
+
+    await service.loginWithGoogle('id-token', 'https://google.test/avatar-fallback.jpg');
+
+    expect(users.updateGoogleProfile).toHaveBeenCalledWith('u1', {
+      googleId: 'gid-new',
+      googlePictureUrl: 'https://google.test/avatar-fallback.jpg',
+      emailVerified: true
+    });
+  });
 
   it('allows legacy Google provider casing and normalizes provider on update', async () => {
     const legacyGoogleUser = {
