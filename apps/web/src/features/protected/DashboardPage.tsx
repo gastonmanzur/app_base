@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { authApi } from '../auth/auth-api';
 import { WebPushCard } from '../notifications/WebPushCard';
 import { MonetizationCard } from '../payments/MonetizationCard';
+import { resolveAvatarUrl } from '../../lib/resolve-avatar-url';
 
 const MAX_SIZE_BYTES = 2_097_152;
 
@@ -86,7 +87,7 @@ export const DashboardPage = (): ReactElement => {
           <h3>{t('profile.avatar.title')}</h3>
           {user?.avatar?.url ? (
             <img
-              src={user.avatar.url}
+              src={resolveAvatarUrl(user.avatar.url)}
               alt={t('profile.avatar.alt')}
               width={96}
               height={96}
