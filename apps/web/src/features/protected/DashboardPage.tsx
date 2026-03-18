@@ -17,7 +17,9 @@ export const DashboardPage = (): ReactElement => {
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   const isGoogleUser = user?.provider === 'google';
+  const avatarUrl = user?.avatar?.url ? resolveAvatarUrl(user.avatar.url) : null;
 
   const onAvatarChange = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.target.files?.[0];
@@ -85,9 +87,10 @@ export const DashboardPage = (): ReactElement => {
 
         <section>
           <h3>{t('profile.avatar.title')}</h3>
-          {user?.avatar?.url ? (
+
+          {avatarUrl ? (
             <img
-              src={resolveAvatarUrl(user.avatar.url)}
+              src={avatarUrl}
               alt={t('profile.avatar.alt')}
               width={96}
               height={96}
@@ -101,8 +104,13 @@ export const DashboardPage = (): ReactElement => {
             <p>{t('profile.avatar.googleManaged')}</p>
           ) : (
             <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <input type="file" accept="image/png,image/jpeg,image/webp" onChange={onAvatarChange} disabled={loading} />
-              <button type="button" onClick={onDeleteAvatar} disabled={loading || !user?.avatar}>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={onAvatarChange}
+                disabled={loading}
+              />
+              <button type="button" onClick={onDeleteAvatar} disabled={loading || !user?.avatar?.url}>
                 {t('profile.avatar.delete')}
               </button>
             </div>
