@@ -43,7 +43,10 @@ const envSchema = z
     MONETIZATION_MODE: z.enum(['one_time_only', 'subscriptions_only', 'both']).default('both'),
     SUBSCRIPTION_PERIOD_MODE: z.enum(['monthly', 'yearly', 'both']).default('both'),
     MERCADOPAGO_ACCESS_TOKEN: z.string().optional(),
+    MP_ACCESS_TOKEN: z.string().optional(),
+    MP_PUBLIC_KEY: z.string().optional(),
     MERCADOPAGO_WEBHOOK_SECRET: z.string().optional(),
+    MP_WEBHOOK_SECRET: z.string().optional(),
     MERCADOPAGO_API_BASE_URL: z.string().url().default('https://api.mercadopago.com'),
     MERCADOPAGO_CHECKOUT_SUCCESS_URL: z.string().url().optional(),
     MERCADOPAGO_CHECKOUT_FAILURE_URL: z.string().url().optional(),
@@ -67,6 +70,8 @@ const envSchema = z
 
     return {
       ...data,
+      MERCADOPAGO_ACCESS_TOKEN: data.MERCADOPAGO_ACCESS_TOKEN ?? data.MP_ACCESS_TOKEN,
+      MERCADOPAGO_WEBHOOK_SECRET: data.MERCADOPAGO_WEBHOOK_SECRET ?? data.MP_WEBHOOK_SECRET,
       CORS_ORIGIN: corsOrigins.length > 0 ? corsOrigins : [data.WEB_BASE_URL]
     };
   })

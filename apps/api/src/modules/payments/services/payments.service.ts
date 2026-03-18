@@ -134,13 +134,22 @@ export class PaymentsService {
     };
   }
 
-  async getOrderStatus(orderId: string, actor: { userId: string; role: 'admin' | 'user' }) {
+  async getOrderStatus(orderId: string, actor: { userId: string; role: 'admin' | 'user' }, options?: { syncWithProvider?: boolean }) {
     const order = await this.paymentRepository.getOrderById(orderId);
     if (!order) {
       throw new AppError('ORDER_NOT_FOUND', 404, 'Order not found');
     }
     if (actor.role !== 'admin' && String(order.userId) !== actor.userId) {
       throw new AppError('FORBIDDEN', 403, 'You cannot access this order');
+    }
+
+    if (options?.syncWithProvider === true && (order.status === 'pending' || order.status === 'in_process')) {
+      await this.syncOrderByExternalReference(order.externalReference, String(order._id));
+      const refreshedOrder = await this.paymentRepository.getOrderById(orderId);
+      if (!refreshedOrder) {
+        throw new AppError('ORDER_NOT_FOUND', 404, 'Order not found');
+      }
+      return refreshedOrder;
     }
 
     return order;
@@ -167,22 +176,7 @@ export class PaymentsService {
 
     if (topic === 'payment') {
       const payment = await this.provider.getPaymentStatus(externalId);
-      const order = await this.paymentRepository.getOrderByExternalReference(payment.externalReference);
-      if (!order) {
-        throw new AppError('ORDER_NOT_FOUND', 404, 'Order for webhook payment not found');
-      }
-      const normalizedStatus = normalizePaymentStatus(payment.status);
-      await this.paymentRepository.updateOrderStatus(String(order._id), normalizedStatus);
-      await this.paymentRepository.upsertTransaction({
-        orderId: String(order._id),
-        providerPaymentId: payment.providerPaymentId,
-        status: normalizedStatus,
-        amount: payment.amount,
-        currency: payment.currency,
-        ...(payment.statusDetail ? { statusDetail: payment.statusDetail } : {}),
-        ...(payment.methodType ? { methodType: payment.methodType } : {}),
-        rawPayload: payment.rawPayload
-      });
+      await this.syncOrderByExternalReference(payment.externalReference);
       return { processed: true, topic };
     }
 
@@ -207,8 +201,37 @@ export class PaymentsService {
     return this.subscriptionRepository.list();
   }
 
+  private async syncOrderByExternalReference(externalReference: string, expectedOrderId?: string): Promise<void> {
+    const order = await this.paymentRepository.getOrderByExternalReference(externalReference);
+    if (!order) {
+      throw new AppError('ORDER_NOT_FOUND', 404, 'Order for payment operation not found');
+    }
+    if (expectedOrderId && String(order._id) !== expectedOrderId) {
+      throw new AppError('ORDER_NOT_FOUND', 404, 'Order for payment operation not found');
+    }
+
+    const payment = await this.provider.getPaymentStatusByExternalReference(externalReference);
+    if (!payment) {
+      return;
+    }
+
+    const normalizedStatus = normalizePaymentStatus(payment.status);
+    await this.paymentRepository.updateOrderStatus(String(order._id), normalizedStatus);
+    await this.paymentRepository.upsertTransaction({
+      orderId: String(order._id),
+      providerPaymentId: payment.providerPaymentId,
+      status: normalizedStatus,
+      amount: payment.amount,
+      currency: payment.currency,
+      ...(payment.statusDetail ? { statusDetail: payment.statusDetail } : {}),
+      ...(payment.methodType ? { methodType: payment.methodType } : {}),
+      rawPayload: payment.rawPayload
+    });
+  }
+
   private validateWebhookSignature(signatureHeader?: string): boolean {
-    const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET ?? env.MERCADOPAGO_WEBHOOK_SECRET;
+    const webhookSecret =
+      process.env.MERCADOPAGO_WEBHOOK_SECRET ?? process.env.MP_WEBHOOK_SECRET ?? env.MERCADOPAGO_WEBHOOK_SECRET;
     if (!webhookSecret) {
       return true;
     }
@@ -217,24 +240,33 @@ export class PaymentsService {
       return false;
     }
 
-    const possibleValues = signatureHeader
+    /**
+     * NOTE:
+     * This is intentionally a lightweight safeguard for sandbox/dev usage.
+     * It validates only that the configured shared secret matches x-signature(v1).
+     * It is NOT a full cryptographic verification of Mercado Pago's signature payload/hash.
+     */
+    const parsedSegments = signatureHeader
       .split(',')
       .map((segment) => segment.trim())
-      .flatMap((segment) => {
+      .map((segment) => {
         const [key = '', ...rest] = segment.split('=');
-        if (!rest.length) return [segment];
-        const value = rest.join('=').trim();
-        return key.trim().toLowerCase() === 'v1' ? [value] : [value, segment];
-      })
-      .filter((value) => value.length > 0);
+        return { key: key.trim().toLowerCase(), value: rest.join('=').trim() };
+      });
 
-    return possibleValues.some((value) => {
-      const expected = Buffer.from(webhookSecret);
-      const candidate = Buffer.from(value);
-      if (expected.length !== candidate.length) {
-        return false;
-      }
-      return timingSafeEqual(expected, candidate);
-    });
+    const v1Value = parsedSegments.find((segment) => segment.key === 'v1')?.value;
+    const fallbackValue = signatureHeader.trim();
+    const candidate = v1Value || (env.NODE_ENV !== 'production' ? fallbackValue : '');
+    if (!candidate) {
+      return false;
+    }
+
+    const expected = Buffer.from(webhookSecret);
+    const received = Buffer.from(candidate);
+    if (expected.length !== received.length) {
+      return false;
+    }
+
+    return timingSafeEqual(expected, received);
   }
 }

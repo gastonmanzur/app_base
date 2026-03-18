@@ -122,6 +122,46 @@ export class MercadoPagoProvider implements PaymentProvider {
     };
   }
 
+  async getPaymentStatusByExternalReference(externalReference: string): Promise<ProviderPaymentStatus | null> {
+    const query = new URLSearchParams({ external_reference: externalReference, sort: 'date_created', criteria: 'desc', limit: '1' });
+    const response = await fetch(`${this.apiBaseUrl}/v1/payments/search?${query.toString()}`, {
+      method: 'GET',
+      headers: this.headers
+    });
+
+    const payload = (await response.json()) as {
+      results?: Array<{
+        id: number;
+        external_reference?: string;
+        status: string;
+        status_detail?: string;
+        transaction_amount: number;
+        currency_id: string;
+        payment_type_id?: string;
+      }>;
+    };
+
+    if (!response.ok) {
+      throw new AppError('PAYMENT_PROVIDER_ERROR', 502, 'Failed to search Mercado Pago payment by external reference');
+    }
+
+    const match = payload.results?.find((result) => result.external_reference === externalReference);
+    if (!match) {
+      return null;
+    }
+
+    return {
+      providerPaymentId: String(match.id),
+      externalReference,
+      status: match.status,
+      amount: match.transaction_amount,
+      currency: match.currency_id,
+      ...(match.status_detail ? { statusDetail: match.status_detail } : {}),
+      ...(match.payment_type_id ? { methodType: match.payment_type_id } : {}),
+      rawPayload: match
+    };
+  }
+
   async getSubscriptionStatus(providerPreapprovalId: string): Promise<ProviderSubscriptionStatus> {
     const response = await fetch(`${this.apiBaseUrl}/preapproval/${providerPreapprovalId}`, {
       method: 'GET',

@@ -79,6 +79,13 @@ describe('PaymentsService', () => {
           status: 'approved',
           amount: 10,
           currency: 'ARS'
+        }),
+        getPaymentStatusByExternalReference: vi.fn().mockResolvedValue({
+          providerPaymentId: '123',
+          externalReference: 'ref',
+          status: 'approved',
+          amount: 10,
+          currency: 'ARS'
         })
       } as never
     );
@@ -88,6 +95,37 @@ describe('PaymentsService', () => {
 
     expect(first).toEqual({ processed: true, topic: 'payment' });
     expect(second).toEqual({ ignored: true, reason: 'already_processed' });
+  });
+
+  it('syncs pending order when requested', async () => {
+    const getOrderById = vi
+      .fn()
+      .mockResolvedValueOnce({ _id: 'ord1', userId: 'u1', status: 'pending', externalReference: 'ref' })
+      .mockResolvedValueOnce({ _id: 'ord1', userId: 'u1', status: 'approved', externalReference: 'ref' });
+    const service = new PaymentsService(
+      {} as never,
+      {} as never,
+      {
+        getOrderById,
+        getOrderByExternalReference: vi.fn().mockResolvedValue({ _id: 'ord1' }),
+        updateOrderStatus: vi.fn(),
+        upsertTransaction: vi.fn()
+      } as never,
+      {} as never,
+      {} as never,
+      {
+        getPaymentStatusByExternalReference: vi.fn().mockResolvedValue({
+          providerPaymentId: 'p1',
+          externalReference: 'ref',
+          status: 'approved',
+          amount: 10,
+          currency: 'ARS'
+        })
+      } as never
+    );
+
+    const result = await service.getOrderStatus('ord1', { userId: 'u1', role: 'user' }, { syncWithProvider: true });
+    expect(result.status).toBe('approved');
   });
 
   
@@ -117,6 +155,13 @@ describe('PaymentsService', () => {
           status: 'approved',
           amount: 10,
           currency: 'ARS'
+        }),
+        getPaymentStatusByExternalReference: vi.fn().mockResolvedValue({
+          providerPaymentId: '123',
+          externalReference: 'ref',
+          status: 'approved',
+          amount: 10,
+          currency: 'ARS'
         })
       } as never
     );
@@ -124,7 +169,7 @@ describe('PaymentsService', () => {
     const result = await service.processWebhook({ topic: 'payment', data: { id: '123' } }, 'ts=1,v1=whsec_test');
     expect(result).toEqual({ processed: true, topic: 'payment' });
   });
-it('propagates provider errors', async () => {
+  it('propagates provider errors', async () => {
     const service = new PaymentsService(
       { getConfig: vi.fn().mockResolvedValue({ monetizationMode: 'both', subscriptionPeriodMode: 'both' }) } as never,
       { findById: vi.fn().mockResolvedValue({ _id: 'u1', email: 'user@test.com' }) } as never,

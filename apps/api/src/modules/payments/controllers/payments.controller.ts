@@ -21,7 +21,8 @@ const subscriptionSchema = z.object({
 const webhookSchema = z.object({
   topic: z.string().optional(),
   type: z.string().optional(),
-  data: z.object({ id: z.union([z.string(), z.number()]).transform(String).optional() }).optional()
+  data: z.object({ id: z.union([z.string(), z.number()]).transform(String).optional() }).optional(),
+  id: z.union([z.string(), z.number()]).transform(String).optional()
 });
 
 export class PaymentsController {
@@ -54,16 +55,31 @@ export class PaymentsController {
   getOrderStatus = async (req: AuthenticatedRequest, res: Response<ApiResponse<unknown>>): Promise<void> => {
     const orderIdRaw = Array.isArray(req.params.orderId) ? req.params.orderId[0] : req.params.orderId;
     const orderId = z.string().min(1).parse(orderIdRaw);
-    const result = await this.service.getOrderStatus(orderId, { userId: req.auth!.userId, role: req.auth!.role });
+    const syncRaw = Array.isArray(req.query.sync) ? req.query.sync[0] : req.query.sync;
+    const syncWithProvider = typeof syncRaw === 'string' ? syncRaw.toLowerCase() === 'true' : false;
+    const result = await this.service.getOrderStatus(
+      orderId,
+      { userId: req.auth!.userId, role: req.auth!.role },
+      { syncWithProvider }
+    );
     res.status(200).json({ success: true, data: result });
   };
 
   webhook = async (req: Request, res: Response<ApiResponse<unknown>>): Promise<void> => {
-    const parsed = webhookSchema.parse(req.body);
+    const parsedBody = webhookSchema.parse(req.body);
+    const parsedQuery = webhookSchema.partial().parse(req.query);
+    const parsed = {
+      ...parsedBody,
+      topic: parsedBody.topic ?? parsedQuery.topic,
+      type: parsedBody.type ?? parsedQuery.type,
+      id: parsedBody.id ?? parsedQuery.id,
+      data: parsedBody.data ?? parsedQuery.data
+    };
     const payload: { topic?: string; type?: string; data?: { id?: string } } = {};
     if (parsed.topic) payload.topic = parsed.topic;
     if (parsed.type) payload.type = parsed.type;
     if (parsed.data?.id) payload.data = { id: parsed.data.id };
+    else if (parsed.id) payload.data = { id: parsed.id };
     const result = await this.service.processWebhook(payload, req.header('x-signature') ?? undefined);
     res.status(200).json({ success: true, data: result });
   };
