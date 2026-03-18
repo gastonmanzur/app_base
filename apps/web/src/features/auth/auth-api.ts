@@ -67,8 +67,8 @@ export const authApi = {
     const result = await request<AuthResponse>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
     return result.data;
   },
-  loginGoogle: async (idToken: string): Promise<AuthResponse['data']> => {
-    const result = await request<AuthResponse>('/auth/google', { method: 'POST', body: JSON.stringify({ idToken }) });
+  loginGoogle: async ({ idToken, photoURL }: { idToken: string; photoURL?: string | null }): Promise<AuthResponse['data']> => {
+    const result = await request<AuthResponse>('/auth/google', { method: 'POST', body: JSON.stringify({ idToken, photoURL }) });
     return result.data;
   },
   refresh: async (): Promise<AuthResponse['data']> => {

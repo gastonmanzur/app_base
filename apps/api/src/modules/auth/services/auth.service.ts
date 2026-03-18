@@ -90,8 +90,9 @@ export class AuthService {
     return this.createSession(user);
   }
 
-  async loginWithGoogle(idToken: string): Promise<AuthResult> {
+  async loginWithGoogle(idToken: string, photoURL: string | null = null): Promise<AuthResult> {
     const profile = await this.googleAuth.verifyIdToken(idToken);
+    const googlePictureUrl = profile.picture ?? photoURL;
     const existing = await this.users.findByEmail(profile.email);
     const existingProvider = existing?.provider?.toLowerCase();
 
@@ -104,7 +105,7 @@ export class AuthService {
         email: profile.email,
         provider: 'google',
         googleId: profile.googleId,
-        ...(profile.picture ? { googlePictureUrl: profile.picture } : {}),
+        ...(googlePictureUrl ? { googlePictureUrl } : {}),
         emailVerified: profile.emailVerified
       });
 
@@ -113,7 +114,7 @@ export class AuthService {
 
     const refreshedUser = await this.users.updateGoogleProfile(existing._id.toString(), {
       googleId: profile.googleId,
-      googlePictureUrl: profile.picture,
+      googlePictureUrl,
       emailVerified: profile.emailVerified
     });
 

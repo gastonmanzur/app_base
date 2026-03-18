@@ -12,7 +12,8 @@ const registerSchema = z.object({
 const loginSchema = registerSchema;
 
 const googleSchema = z.object({
-  idToken: z.string().min(10)
+  idToken: z.string().min(10),
+  photoURL: z.string().url().nullish()
 });
 
 const forgotSchema = z.object({
@@ -80,7 +81,7 @@ export const authController = {
 
   loginWithGoogle: async (req: Request, res: Response): Promise<void> => {
     const data = googleSchema.parse(req.body);
-    const session = await authService.loginWithGoogle(data.idToken);
+    const session = await authService.loginWithGoogle(data.idToken, data.photoURL ?? null);
 
     res.cookie(refreshCookieName, session.refreshToken, refreshCookieOptions);
     res.status(200).json({
