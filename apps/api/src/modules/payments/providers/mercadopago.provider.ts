@@ -23,6 +23,22 @@ export class MercadoPagoProvider implements PaymentProvider {
     };
   }
 
+
+  async createOneTimePayment(input: CreateOneTimePaymentInput): Promise<ProviderCheckoutResponse> {
+    if (
+      !env.MERCADOPAGO_CHECKOUT_SUCCESS_URL ||
+      !env.MERCADOPAGO_CHECKOUT_FAILURE_URL ||
+      !env.MERCADOPAGO_CHECKOUT_PENDING_URL
+    ) {
+      throw new AppError(
+        'PAYMENT_PROVIDER_NOT_CONFIGURED',
+        500,
+        'Mercado Pago checkout back URLs are not configured'
+      );
+    }
+
+    const response = await fetch(`${this.apiBaseUrl}/checkout/preferences`, {
+
  async createOneTimePayment(input: CreateOneTimePaymentInput): Promise<ProviderCheckoutResponse> {
   const requestBody = {
     external_reference: input.externalReference,
@@ -52,6 +68,7 @@ export class MercadoPagoProvider implements PaymentProvider {
 
   try {
     response = await fetch(`${this.apiBaseUrl}/checkout/preferences`, {
+
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(requestBody)
