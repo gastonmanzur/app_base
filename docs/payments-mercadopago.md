@@ -25,3 +25,20 @@ Cada evento se registra en `WebhookEvent` con llave única (`provider`, `eventKe
   - `PaymentOrder.status`
   - `PaymentTransaction` (upsert por `providerPaymentId`)
 - Esto permite reconciliar pagos en sandbox/local aunque el webhook llegue tarde o falle.
+
+## Suscripciones: creación, deduplicación y estado
+- Crear suscripción: `POST /api/payments/subscriptions`
+  - Campos: `planCode`, `title`, `amount`, `currency`, `period` (`monthly` | `yearly`).
+  - Respuesta incluye: `subscriptionId`, `externalReference`, `providerPreapprovalId`, `checkoutUrl`, `status`.
+- Control de duplicados:
+  - Si el usuario ya tiene una suscripción `pending`, `authorized` o `paused` para el mismo `planCode + period`, responde `409 SUBSCRIPTION_ALREADY_EXISTS`.
+- Consulta estado del usuario autenticado:
+  - Endpoint: `GET /api/payments/subscriptions/me?subscriptionId=...&sync=true`
+  - `subscriptionId` es opcional. Si no se envía, devuelve la última suscripción del usuario (con filtros opcionales `planCode` y `period`).
+  - Con `sync=true`, si hay `providerPreapprovalId` y estado no terminal, el backend consulta `/preapproval/{id}` y persiste estado real.
+
+## Sincronización por webhook de suscripciones
+- Evento: `subscription_preapproval`.
+- El backend consulta Mercado Pago `/preapproval/{id}`.
+- Persiste estado normalizado y `nextBillingDate`.
+- Si no encuentra por `providerPreapprovalId`, intenta por `externalReference` para robustez ante carreras de persistencia.

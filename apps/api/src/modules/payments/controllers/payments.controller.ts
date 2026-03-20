@@ -18,6 +18,16 @@ const subscriptionSchema = z.object({
   period: z.enum(['monthly', 'yearly'])
 });
 
+const subscriptionStatusQuerySchema = z.object({
+  subscriptionId: z.string().min(1).optional(),
+  planCode: z.string().min(2).max(40).optional(),
+  period: z.enum(['monthly', 'yearly']).optional(),
+  sync: z
+    .union([z.boolean(), z.string()])
+    .transform((value) => (typeof value === 'string' ? value.toLowerCase() === 'true' : value))
+    .optional()
+});
+
 const webhookSchema = z.object({
   topic: z.string().optional(),
   type: z.string().optional(),
@@ -62,6 +72,18 @@ export class PaymentsController {
       { userId: req.auth!.userId, role: req.auth!.role },
       { syncWithProvider }
     );
+    res.status(200).json({ success: true, data: result });
+  };
+
+  getMySubscriptionStatus = async (req: AuthenticatedRequest, res: Response<ApiResponse<unknown>>): Promise<void> => {
+    const parsedQuery = subscriptionStatusQuerySchema.parse(req.query);
+    const result = await this.service.getUserSubscriptionStatus({
+      userId: req.auth!.userId,
+      ...(parsedQuery.subscriptionId ? { subscriptionId: parsedQuery.subscriptionId } : {}),
+      ...(parsedQuery.planCode ? { planCode: parsedQuery.planCode } : {}),
+      ...(parsedQuery.period ? { period: parsedQuery.period } : {}),
+      syncWithProvider: parsedQuery.sync ?? false
+    });
     res.status(200).json({ success: true, data: result });
   };
 
