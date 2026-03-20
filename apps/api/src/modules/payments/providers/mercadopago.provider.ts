@@ -23,7 +23,6 @@ export class MercadoPagoProvider implements PaymentProvider {
     };
   }
 
-
   async createOneTimePayment(input: CreateOneTimePaymentInput): Promise<ProviderCheckoutResponse> {
     if (
       !env.MERCADOPAGO_CHECKOUT_SUCCESS_URL ||
@@ -37,72 +36,68 @@ export class MercadoPagoProvider implements PaymentProvider {
       );
     }
 
-    const response = await fetch(`${this.apiBaseUrl}/checkout/preferences`, {
+    const requestBody = {
+      external_reference: input.externalReference,
+      items: [
+        {
+          title: input.title,
+          quantity: 1,
+          unit_price: input.amount,
+          currency_id: input.currency
+        }
+      ],
+      payer: input.payerEmail ? { email: input.payerEmail } : undefined,
+      back_urls: {
+        success: env.MERCADOPAGO_CHECKOUT_SUCCESS_URL,
+        failure: env.MERCADOPAGO_CHECKOUT_FAILURE_URL,
+        pending: env.MERCADOPAGO_CHECKOUT_PENDING_URL
+      },
+      auto_return: 'approved' as const,
+      statement_descriptor: env.MERCADOPAGO_STATEMENT_DESCRIPTOR
+    };
 
- async createOneTimePayment(input: CreateOneTimePaymentInput): Promise<ProviderCheckoutResponse> {
-  const requestBody = {
-    external_reference: input.externalReference,
-    items: [
-      {
-        title: input.title,
-        quantity: 1,
-        unit_price: input.amount,
-        currency_id: input.currency
-      }
-    ],
-    payer: input.payerEmail ? { email: input.payerEmail } : undefined,
-    back_urls: {
-      success: env.MERCADOPAGO_CHECKOUT_SUCCESS_URL,
-      failure: env.MERCADOPAGO_CHECKOUT_FAILURE_URL,
-      pending: env.MERCADOPAGO_CHECKOUT_PENDING_URL
-    },
-    auto_return: 'approved' as const,
-    statement_descriptor: env.MERCADOPAGO_STATEMENT_DESCRIPTOR
-  };
+    console.log('MP create preference request body =>', requestBody);
+    console.log('MP access token loaded =>', Boolean(env.MERCADOPAGO_ACCESS_TOKEN));
+    console.log('MP access token prefix =>', env.MERCADOPAGO_ACCESS_TOKEN?.slice(0, 12));
 
-  console.log('MP create preference request body =>', requestBody);
-  console.log('MP access token loaded =>', Boolean(env.MERCADOPAGO_ACCESS_TOKEN));
-  console.log('MP access token prefix =>', env.MERCADOPAGO_ACCESS_TOKEN?.slice(0, 12));
+    let response: globalThis.Response;
 
-  let response: globalThis.Response;
+    try {
+      response = await fetch(`${this.apiBaseUrl}/checkout/preferences`, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify(requestBody)
+      });
+    } catch (error) {
+      console.error('MP fetch error =>', error);
+      throw new AppError('PAYMENT_PROVIDER_ERROR', 502, `Mercado Pago request failed before response: ${String(error)}`);
+    }
 
-  try {
-    response = await fetch(`${this.apiBaseUrl}/checkout/preferences`, {
+    const rawText = await response.text();
+    console.log('MP create preference status =>', response.status);
+    console.log('MP create preference raw response =>', rawText);
 
-      method: 'POST',
-      headers: this.headers,
-      body: JSON.stringify(requestBody)
-    });
-  } catch (error) {
-    console.error('MP fetch error =>', error);
-    throw new AppError('PAYMENT_PROVIDER_ERROR', 502, `Mercado Pago request failed before response: ${String(error)}`);
+    let payload: { id?: string; init_point?: string; sandbox_init_point?: string } = {};
+    try {
+      payload = JSON.parse(rawText);
+    } catch {
+      // dejar payload vacío
+    }
+
+    if (!response.ok || !payload.id || (!payload.init_point && !payload.sandbox_init_point)) {
+      throw new AppError(
+        'PAYMENT_PROVIDER_ERROR',
+        502,
+        `Failed to create Mercado Pago checkout preference. Status: ${response.status}. Response: ${rawText}`
+      );
+    }
+
+    return {
+      providerOrderId: payload.id,
+      preferenceId: payload.id,
+      initPoint: payload.init_point ?? payload.sandbox_init_point!
+    };
   }
-
-  const rawText = await response.text();
-  console.log('MP create preference status =>', response.status);
-  console.log('MP create preference raw response =>', rawText);
-
-  let payload: { id?: string; init_point?: string; sandbox_init_point?: string } = {};
-  try {
-    payload = JSON.parse(rawText);
-  } catch {
-    // dejar payload vacío
-  }
-
-  if (!response.ok || !payload.id || (!payload.init_point && !payload.sandbox_init_point)) {
-    throw new AppError(
-      'PAYMENT_PROVIDER_ERROR',
-      502,
-      `Failed to create Mercado Pago checkout preference. Status: ${response.status}. Response: ${rawText}`
-    );
-  }
-
-  return {
-    providerOrderId: payload.id,
-    preferenceId: payload.id,
-    initPoint: payload.init_point ?? payload.sandbox_init_point!
-  };
-}
 
   async createSubscription(input: CreateSubscriptionInput): Promise<ProviderCheckoutResponse> {
     const response = await fetch(`${this.apiBaseUrl}/preapproval`, {
@@ -118,7 +113,7 @@ export class MercadoPagoProvider implements PaymentProvider {
           transaction_amount: input.amount,
           currency_id: input.currency
         },
-        back_urls: env.MERCADOPAGO_CHECKOUT_SUCCESS_URL,
+        back_url: env.MERCADOPAGO_CHECKOUT_SUCCESS_URL,
         status: 'pending'
       })
     });
@@ -167,7 +162,13 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   async getPaymentStatusByExternalReference(externalReference: string): Promise<ProviderPaymentStatus | null> {
-    const query = new URLSearchParams({ external_reference: externalReference, sort: 'date_created', criteria: 'desc', limit: '1' });
+    const query = new URLSearchParams({
+      external_reference: externalReference,
+      sort: 'date_created',
+      criteria: 'desc',
+      limit: '1'
+    });
+
     const response = await fetch(`${this.apiBaseUrl}/v1/payments/search?${query.toString()}`, {
       method: 'GET',
       headers: this.headers
