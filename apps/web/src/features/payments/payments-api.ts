@@ -67,7 +67,10 @@ export const paymentsApi = {
     accessToken: string,
     input: { planCode: string; title: string; amount: number; currency: string; period: 'monthly' | 'yearly' }
   ) => {
-    const result = await request<{ success: true; data: { checkoutUrl: string } }>('/payments/subscriptions', {
+    const result = await request<{
+      success: true;
+      data: { subscriptionId: string; externalReference: string; providerPreapprovalId: string; checkoutUrl: string; status: string };
+    }>('/payments/subscriptions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify(input)
@@ -106,6 +109,37 @@ export const paymentsApi = {
         headers: { Authorization: `Bearer ${accessToken}` }
       }
     );
+
+    return result.data;
+  },
+  getMySubscriptionStatus: async (
+    accessToken: string,
+    input: { subscriptionId?: string; planCode?: string; period?: 'monthly' | 'yearly'; sync?: boolean }
+  ) => {
+    const params = new URLSearchParams();
+    if (input.subscriptionId) params.set('subscriptionId', input.subscriptionId);
+    if (input.planCode) params.set('planCode', input.planCode);
+    if (input.period) params.set('period', input.period);
+    if (input.sync) params.set('sync', 'true');
+
+    const query = params.size > 0 ? `?${params.toString()}` : '';
+    const result = await request<{
+      success: true;
+      data: {
+        _id: string;
+        planCode: string;
+        period: 'monthly' | 'yearly';
+        status: 'pending' | 'authorized' | 'paused' | 'cancelled' | 'ended';
+        externalReference: string;
+        providerPreapprovalId?: string;
+        providerInitPoint?: string;
+        nextBillingDate?: string;
+        updatedAt: string;
+      };
+    }>(`/payments/subscriptions/me${query}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
 
     return result.data;
   }

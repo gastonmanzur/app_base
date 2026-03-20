@@ -39,7 +39,11 @@ describe('PaymentsService', () => {
       { getConfig: vi.fn().mockResolvedValue({ monetizationMode: 'both', subscriptionPeriodMode: 'both' }) } as never,
       { findById: vi.fn().mockResolvedValue({ _id: 'u1', email: 'user@test.com' }) } as never,
       {} as never,
-      { create: vi.fn().mockResolvedValue({ _id: 'sub1' }), updateProviderData: vi.fn() } as never,
+      {
+        findByUserPlanPeriodWithStatuses: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ _id: 'sub1' }),
+        updateProviderData: vi.fn()
+      } as never,
       {} as never,
       { createSubscription: vi.fn().mockResolvedValue({ providerOrderId: 'pre1', initPoint: 'https://checkout-sub' }) } as never
     );
@@ -54,6 +58,28 @@ describe('PaymentsService', () => {
     });
 
     expect(result.checkoutUrl).toContain('checkout-sub');
+  });
+
+  it('blocks duplicate in-progress subscriptions', async () => {
+    const service = new PaymentsService(
+      { getConfig: vi.fn().mockResolvedValue({ monetizationMode: 'both', subscriptionPeriodMode: 'both' }) } as never,
+      { findById: vi.fn().mockResolvedValue({ _id: 'u1', email: 'user@test.com' }) } as never,
+      {} as never,
+      { findByUserPlanPeriodWithStatuses: vi.fn().mockResolvedValue({ _id: 'sub-existing', status: 'authorized' }) } as never,
+      {} as never,
+      {} as never
+    );
+
+    await expect(
+      service.createSubscription({
+        userId: 'u1',
+        planCode: 'pro_monthly',
+        title: 'Plan Pro mensual',
+        amount: 1990,
+        currency: 'ARS',
+        period: 'monthly'
+      })
+    ).rejects.toBeInstanceOf(AppError);
   });
 
   it('rejects invalid webhook payload', async () => {
@@ -128,7 +154,34 @@ describe('PaymentsService', () => {
     expect(result.status).toBe('approved');
   });
 
-  
+  it('syncs user subscription status when requested', async () => {
+    const repository = {
+      getById: vi
+        .fn()
+        .mockResolvedValueOnce({ _id: 'sub1', userId: 'u1', status: 'pending', providerPreapprovalId: 'pre1' })
+        .mockResolvedValueOnce({ _id: 'sub1', userId: 'u1', status: 'authorized', providerPreapprovalId: 'pre1' })
+        .mockResolvedValueOnce({ _id: 'sub1', userId: 'u1', status: 'authorized', providerPreapprovalId: 'pre1' }),
+      updateStatusByPreapprovalId: vi.fn().mockResolvedValue({ _id: 'sub1' })
+    };
+    const service = new PaymentsService(
+      {} as never,
+      {} as never,
+      {} as never,
+      repository as never,
+      {} as never,
+      {
+        getSubscriptionStatus: vi.fn().mockResolvedValue({
+          providerPreapprovalId: 'pre1',
+          externalReference: 'sub_ref',
+          status: 'authorized'
+        })
+      } as never
+    );
+
+    const result = await service.getUserSubscriptionStatus({ userId: 'u1', subscriptionId: 'sub1', syncWithProvider: true });
+    expect(result.status).toBe('authorized');
+  });
+
   it('rejects webhook when signature is missing and secret is configured', async () => {
     process.env.MERCADOPAGO_WEBHOOK_SECRET = 'whsec_test';
     const service = new PaymentsService({} as never, {} as never, {} as never, {} as never, {} as never, {} as never);
@@ -169,6 +222,7 @@ describe('PaymentsService', () => {
     const result = await service.processWebhook({ topic: 'payment', data: { id: '123' } }, 'ts=1,v1=whsec_test');
     expect(result).toEqual({ processed: true, topic: 'payment' });
   });
+
   it('propagates provider errors', async () => {
     const service = new PaymentsService(
       { getConfig: vi.fn().mockResolvedValue({ monetizationMode: 'both', subscriptionPeriodMode: 'both' }) } as never,

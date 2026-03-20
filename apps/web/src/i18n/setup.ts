@@ -23,7 +23,7 @@ void i18n.use(initReactI18next).init({
         },
         payments: {
           title: 'Monetización',
-          subtitle: 'Inicia un pago único con Mercado Pago y consulta su estado.',
+          subtitle: 'Inicia pagos únicos y suscripciones con Mercado Pago, y consulta su estado real.',
           buyOneTime: 'Comprar pago único',
           refreshStatus: 'Actualizar estado',
           statusUpdated: 'Estado sincronizado desde backend/proveedor.',
@@ -33,6 +33,9 @@ void i18n.use(initReactI18next).init({
           subscribeMonthly: 'Suscribirme mensual',
           subscribeYearly: 'Suscribirme anual',
           pending: 'Operación iniciada. Completa el checkout y espera confirmación por webhook.',
+          refreshSubscriptionStatus: 'Actualizar estado suscripción',
+          lastSubscription: 'Última suscripción',
+          currentSubscriptionStatus: 'Estado suscripción',
           error: 'No se pudo iniciar la operación de pago.'
         },
         profile: {
@@ -79,7 +82,7 @@ void i18n.use(initReactI18next).init({
         },
         payments: {
           title: 'Monetization',
-          subtitle: 'Start a one-time Mercado Pago payment and check its status.',
+          subtitle: 'Start one-time payments and subscriptions with Mercado Pago, and check real status.',
           buyOneTime: 'Buy one-time',
           refreshStatus: 'Refresh status',
           statusUpdated: 'Status synchronized from backend/provider.',
@@ -89,6 +92,9 @@ void i18n.use(initReactI18next).init({
           subscribeMonthly: 'Subscribe monthly',
           subscribeYearly: 'Subscribe yearly',
           pending: 'Operation started. Complete checkout and wait for webhook confirmation.',
+          refreshSubscriptionStatus: 'Refresh subscription status',
+          lastSubscription: 'Last subscription',
+          currentSubscriptionStatus: 'Subscription status',
           error: 'Payment operation could not be started.'
         },
         profile: {

@@ -27,6 +27,8 @@ const normalizeSubscriptionStatus = (status: string) => {
   return 'pending';
 };
 
+const inProgressSubscriptionStatuses = new Set(['pending', 'authorized', 'paused'] as const);
+
 export class PaymentsService {
   constructor(
     private readonly configRepository = new MonetizationConfigRepository(),
@@ -100,6 +102,17 @@ export class PaymentsService {
       throw new AppError('USER_NOT_FOUND', 404, 'User not found');
     }
 
+    const existing = await this.subscriptionRepository.findByUserPlanPeriodWithStatuses(
+      input.userId,
+      input.planCode,
+      input.period,
+Array.from(inProgressSubscriptionStatuses)
+    );
+
+    if (existing) {
+      throw new AppError('SUBSCRIPTION_ALREADY_EXISTS', 409, 'There is already an in-progress subscription for this plan and period');
+    }
+
     const externalReference = `sub_${randomUUID()}`;
     const subscription = await this.subscriptionRepository.create({
       userId: input.userId,
@@ -129,6 +142,7 @@ export class PaymentsService {
     return {
       subscriptionId: String(subscription._id),
       externalReference,
+      providerPreapprovalId: checkout.providerOrderId,
       checkoutUrl: checkout.initPoint,
       status: 'pending'
     };
@@ -153,6 +167,36 @@ export class PaymentsService {
     }
 
     return order;
+  }
+
+  async getUserSubscriptionStatus(input: {
+    userId: string;
+    subscriptionId?: string;
+    planCode?: string;
+    period?: 'monthly' | 'yearly';
+    syncWithProvider?: boolean;
+  }) {
+    const subscription = input.subscriptionId
+      ? await this.subscriptionRepository.getById(input.subscriptionId)
+      : await this.subscriptionRepository.findLatestByUser(input.userId, {
+          ...(input.planCode ? { planCode: input.planCode } : {}),
+          ...(input.period ? { period: input.period } : {})
+        });
+
+    if (!subscription || String(subscription.userId) !== input.userId) {
+      throw new AppError('SUBSCRIPTION_NOT_FOUND', 404, 'Subscription not found');
+    }
+
+    if (input.syncWithProvider && subscription.providerPreapprovalId && inProgressSubscriptionStatuses.has(subscription.status as 'pending' | 'authorized' | 'paused')) {
+      await this.syncSubscriptionByPreapprovalId(subscription.providerPreapprovalId, String(subscription._id));
+      const refreshed = await this.subscriptionRepository.getById(String(subscription._id));
+      if (!refreshed) {
+        throw new AppError('SUBSCRIPTION_NOT_FOUND', 404, 'Subscription not found');
+      }
+      return refreshed;
+    }
+
+    return subscription;
   }
 
   async processWebhook(payload: { topic?: string; type?: string; data?: { id?: string } }, signatureHeader?: string) {
@@ -181,12 +225,7 @@ export class PaymentsService {
     }
 
     if (topic === 'subscription_preapproval') {
-      const subscription = await this.provider.getSubscriptionStatus(externalId);
-      await this.subscriptionRepository.updateStatusByPreapprovalId(
-        subscription.providerPreapprovalId,
-        normalizeSubscriptionStatus(subscription.status),
-        subscription.nextBillingDate ? new Date(subscription.nextBillingDate) : undefined
-      );
+      await this.syncSubscriptionByPreapprovalId(externalId);
       return { processed: true, topic };
     }
 
@@ -227,6 +266,31 @@ export class PaymentsService {
       ...(payment.methodType ? { methodType: payment.methodType } : {}),
       rawPayload: payment.rawPayload
     });
+  }
+
+  private async syncSubscriptionByPreapprovalId(providerPreapprovalId: string, expectedSubscriptionId?: string): Promise<void> {
+    const status = await this.provider.getSubscriptionStatus(providerPreapprovalId);
+    const normalizedStatus = normalizeSubscriptionStatus(status.status);
+    const nextBillingDate = status.nextBillingDate ? new Date(status.nextBillingDate) : undefined;
+
+    const updated = await this.subscriptionRepository.updateStatusByPreapprovalId(
+      status.providerPreapprovalId,
+      normalizedStatus,
+      nextBillingDate
+    );
+
+    if (!updated && status.externalReference) {
+      await this.subscriptionRepository.updateStatusByExternalReference(status.externalReference, normalizedStatus, nextBillingDate, {
+        providerPreapprovalId: status.providerPreapprovalId
+      });
+    }
+
+    if (expectedSubscriptionId) {
+      const current = await this.subscriptionRepository.getById(expectedSubscriptionId);
+      if (!current || current.providerPreapprovalId !== status.providerPreapprovalId) {
+        throw new AppError('SUBSCRIPTION_NOT_FOUND', 404, 'Subscription not found');
+      }
+    }
   }
 
   private validateWebhookSignature(signatureHeader?: string): boolean {

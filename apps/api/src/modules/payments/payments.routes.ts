@@ -20,6 +20,7 @@ paymentsRouter.post('/webhooks/mercadopago', webhookRateLimiter, asyncHandler(co
 paymentsRouter.post('/one-time', requireAuth, asyncHandler(controller.createOneTime));
 paymentsRouter.post('/subscriptions', requireAuth, asyncHandler(controller.createSubscription));
 paymentsRouter.get('/orders/:orderId', requireAuth, asyncHandler(controller.getOrderStatus));
+paymentsRouter.get('/subscriptions/me', requireAuth, asyncHandler(controller.getMySubscriptionStatus));
 
 paymentsRouter.get('/admin/transactions', requireAuth, requireRoles('admin'), asyncHandler(controller.listAdminTransactions));
 paymentsRouter.get('/admin/subscriptions', requireAuth, requireRoles('admin'), asyncHandler(controller.listAdminSubscriptions));

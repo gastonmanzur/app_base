@@ -1,6 +1,8 @@
-import { SubscriptionModel, type subscriptionStatuses } from '../models/subscription.model.js';
+import { SubscriptionModel, subscriptionPeriods, subscriptionStatuses } from '../models/subscription.model.js';
 
 export type SubscriptionStatus = (typeof subscriptionStatuses)[number];
+
+type SubscriptionPeriod = (typeof subscriptionPeriods)[number];
 
 export class SubscriptionRepository {
   create(input: {
@@ -9,7 +11,7 @@ export class SubscriptionRepository {
     title: string;
     amount: number;
     currency: string;
-    period: 'monthly' | 'yearly';
+    period: SubscriptionPeriod;
     externalReference: string;
     metadata?: Record<string, unknown>;
   }) {
@@ -26,6 +28,31 @@ export class SubscriptionRepository {
       { status, ...(nextBillingDate ? { nextBillingDate } : {}) },
       { new: true }
     );
+  }
+
+  updateStatusByExternalReference(
+    externalReference: string,
+    status: SubscriptionStatus,
+    nextBillingDate?: Date,
+    providerData?: { providerPreapprovalId?: string }
+  ) {
+    return SubscriptionModel.findOneAndUpdate(
+      { provider: 'mercadopago', externalReference },
+      {
+        status,
+        ...(nextBillingDate ? { nextBillingDate } : {}),
+        ...(providerData?.providerPreapprovalId ? { providerPreapprovalId: providerData.providerPreapprovalId } : {})
+      },
+      { new: true }
+    );
+  }
+
+  findByUserPlanPeriodWithStatuses(userId: string, planCode: string, period: SubscriptionPeriod, statuses: SubscriptionStatus[]) {
+    return SubscriptionModel.findOne({ userId, planCode, period, status: { $in: statuses } }).sort({ createdAt: -1 }).lean();
+  }
+
+  findLatestByUser(userId: string, filters?: { planCode?: string; period?: SubscriptionPeriod }) {
+    return SubscriptionModel.findOne({ userId, ...(filters ?? {}) }).sort({ createdAt: -1 }).lean();
   }
 
   getById(subscriptionId: string) {
